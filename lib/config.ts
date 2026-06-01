@@ -19,7 +19,7 @@ export const DEFAULT_SALES_CONTEXT: SalesContext = {
 export const SOURCE_BUDGETS = {
   maxSourcesPerRun: 20,
   maxSourceCharsForLLM: 12000,
-  maxRunDurationMs: 45_000,
+  maxRunDurationMs: 58_000,
   tavilyTimeoutMs: 12_000,
 } as const;
 

@@ -182,7 +182,7 @@ All API routes are protected by a **sliding-window IP-based rate limiter** (no e
 | Route             | Window | Max requests | Block duration |
 | ----------------- | ------ | ------------ | -------------- |
 | `POST /api/run`   | 60s    | 10           | 60s            |
-| `POST /api/batch` | 60s    | 5            | 120s           |
+| `POST /api/batch` | 60s    | 60           | 30s            |
 | `GET /api/runs`   | 60s    | 60           | 30s            |
 
 Blocked responses return HTTP 429 with a `Retry-After` header. The `?limit` parameter on `/api/runs` is also capped at 200 to prevent bulk data scraping.
@@ -324,6 +324,37 @@ Three gates prevent low-quality drafts from being produced:
 - **Gate 1 (Resolve)** — blocks if prospect identity confidence is `LOW` (no company + no disambiguator).
 - **Gate 2 (Research)** — skips draft if no web sources are found for the prospect.
 - **Gate 3 (Draft)** — only generates outreach copy when the overall confidence verdict is `HIGH` or `MEDIUM`.
+
+---
+
+## Research Foundation — InterDeepResearch
+
+Omen's dossier UX is informed by the principles in:
+
+> **InterDeepResearch: Enabling Human-Agent Collaborative Information Seeking through Interactive Deep Research**
+> Bo Pan, Lunke Pan, Yitao Zhou, Qi Jiang, Zhen Wen, Minfeng Zhu, Wei Chen
+> arXiv:2603.12608 · CC BY 4.0
+> https://arxiv.org/abs/2603.12608
+
+The paper argues against the "autonomous query-to-report" paradigm — where an AI agent silently produces a finished output and the user is left as a passive consumer. Instead it proposes embedding the user as an **active collaborator** who can observe, inspect, and steer the research process at every step.
+
+### How Omen implements these principles
+
+| InterDeepResearch principle | How Omen implements it |
+| --- | --- |
+| **Transparency in reasoning** | Every signal displays a 6-dimension score breakdown (persona fit, business trigger, specificity, freshness, source credibility, mention safety) so the user understands *why* a signal scored the way it did |
+| **Evidence provenance** | Each source shows its name, publication date with a freshness colour (green < 2 weeks, amber < 3 months, red older), a snippet preview, and a direct link to the original URL |
+| **Steering / human override** | Any ranked signal can be **pinned** by the user to override the agent's selection — the dossier and draft regenerate against the pinned signal |
+| **Rejected alternatives with reasons** | Every signal that was considered but not chosen is shown with its score and the specific reason it was not selected (rank, grade, safety classification) |
+| **Honest abstention** | Pipeline explicitly skips draft generation when evidence is thin, identity is ambiguous, or all signals are below threshold — with a plain-language explanation |
+| **Process observability** | The real-time stage timeline (Resolve → Research → Extract → Judge → Draft) is visible and expandable while the pipeline runs, so the user sees the research path, not just the final output |
+| **Safety classification** | Every signal is classified (`mentionable` / `usable_but_do_not_mention` / `disqualifying`) and the draft copy is constrained by that classification |
+
+### Key design takeaway from the paper
+
+> *"Do not just show the final outreach copy. Show the research path: what was found, what was selected, what was rejected, and why."*
+
+This is why the Omen dossier exposes five distinct sections — Selected Signal, Draft, All Ranked Signals, Rejected Signals, and Evidence Sources — rather than surfacing only the generated message.
 
 ---
 
