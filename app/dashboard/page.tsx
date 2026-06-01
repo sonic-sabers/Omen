@@ -71,29 +71,46 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Stats + Upload row ── */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start">
-          {runs.length > 0 && (
-            <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard label="Total runs" value={runs.length} />
-              <StatCard label="Drafts produced" value={drafted} sub={`${100 - skipRate}% draft rate`} />
-              <StatCard label="Avg duration" value={`${(avgDuration / 1000).toFixed(1)}s`} />
-              <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "—"} sub="citation fidelity" />
-            </div>
-          )}
-          <div className="shrink-0">
-            <BatchUpload onBatchComplete={loadRuns} />
+        {/* ── Stats row (only with data) ── */}
+        {runs.length > 0 && (
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Total runs" value={runs.length} />
+            <StatCard label="Drafts produced" value={drafted} sub={`${100 - skipRate}% draft rate`} />
+            <StatCard label="Avg duration" value={`${(avgDuration / 1000).toFixed(1)}s`} />
+            <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "—"} sub="citation fidelity" />
           </div>
-        </div>
+        )}
 
-        {/* ── Table ── */}
+        {/* ── Table + Upload ── */}
         {isLoading ? (
           <div className="flex h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading runs...
           </div>
+        ) : runs.length > 0 ? (
+          <div className="space-y-4">
+            <DashboardTable runs={runs} onRefresh={loadRuns} />
+            <div className="flex justify-end">
+              <BatchUpload onBatchComplete={loadRuns} />
+            </div>
+          </div>
         ) : (
-          <DashboardTable runs={runs} onRefresh={loadRuns} />
+          /* Empty state with Upload prominent */
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/60 py-20 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <svg className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-semibold">No runs yet</h3>
+            <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+              Research a prospect from the main page, or upload a CSV to process multiple people at once.
+            </p>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <BatchUpload onBatchComplete={loadRuns} />
+              <p className="text-[10px] text-muted-foreground">or go back and research a single prospect</p>
+            </div>
+          </div>
         )}
       </div>
     </main>
