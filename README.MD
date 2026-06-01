@@ -1,6 +1,6 @@
-# Omen — Smart Sales Research
+# Omen: Smart Sales Research
 
-**Omen** is an AI-powered B2B sales intelligence tool that researches a prospect online, scores the best outreach signal, and generates a ready-to-send personalised message — all in one pipeline run.
+**Omen** is an AI-powered B2B sales intelligence tool that researches a prospect online, scores the best outreach signal, and generates a ready-to-send personalised message: all in one pipeline run.
 
 ---
 
@@ -14,7 +14,7 @@ Resolve → Research → Extract → Judge → Draft
 
 Each stage streams a real-time status event (`running` → `complete` | `error`) back to the browser via **Server-Sent Events (SSE)**, so the UI updates live as each stage finishes.
 
-### Stage 1 — Resolve
+### Stage 1: Resolve
 
 Normalises and validates the prospect's identity before any external call is made.
 
@@ -26,7 +26,7 @@ Normalises and validates the prospect's identity before any external call is mad
 - Detects common/ambiguous names (e.g. "John Smith") and flags them unless a LinkedIn URL is present
 - **Gate 1**: if confidence is `LOW`, the run stops here with a descriptive error. No API calls are made.
 
-### Stage 2 — Research
+### Stage 2: Research
 
 Fires **10 parallel Tavily searches** across distinct signal categories to maximise coverage:
 
@@ -45,21 +45,21 @@ Fires **10 parallel Tavily searches** across distinct signal categories to maxim
 
 Results are deduplicated by URL, then truncated to a max of 20 sources / 12,000 characters before being passed downstream (to keep LLM costs predictable).
 
-**Gate 2**: if zero sources are found after deduplication, the pipeline yields a partial dossier with fallback notes and stops — no extract, judge, or draft stage runs.
+**Gate 2**: if zero sources are found after deduplication, the pipeline yields a partial dossier with fallback notes and stops: no extract, judge, or draft stage runs.
 
-### Stage 3 — Extract
+### Stage 3: Extract
 
 Converts raw search snippets into structured **signal candidates**.
 
 - In **live mode**: Claude is asked to identify concrete, outreach-worthy events from the source snippets and return them as JSON (`summary`, `sourceIndexes`, `signalType`).
 - Each candidate is classified as one of:
-  - `person` — about the specific individual (highest value)
-  - `company` — about their organisation (useful but lower specificity)
-  - `generic` — industry noise (dropped immediately)
+  - `person`: about the specific individual (highest value)
+  - `company`: about their organisation (useful but lower specificity)
+  - `generic`: industry noise (dropped immediately)
 - Candidates flagged as `unverified` or `rumor` are filtered out before Claude sees them (stale content older than 2 years is also dropped).
 - In **fixture mode**: the LLM call is skipped; a deterministic keyword-based fallback extracts candidates directly from snippets.
 
-### Stage 4 — Judge
+### Stage 4: Judge
 
 Scores every candidate and picks the single best safe signal.
 
@@ -71,7 +71,7 @@ Safety classification happens before selection:
 | --------------------------- | ----------------------------------------------------------- |
 | `mentionable`               | Safe to reference directly in outreach                      |
 | `usable_but_do_not_mention` | Context is useful but must not be cited (e.g. layoffs)      |
-| `disqualifying`             | Contains scandal, fraud, unverified rumor — vetoed entirely |
+| `disqualifying`             | Contains scandal, fraud, unverified rumor: vetoed entirely |
 
 In **live mode** Claude also performs a final relevance + persona-fit check to confirm the selection. The chosen signal must score ≥ 13 and not be `disqualifying`.
 
@@ -82,7 +82,7 @@ A **confidence verdict** (`HIGH` / `MEDIUM` / `SKIP`) is then calculated from:
 - Selected signal grade and score
 - Count of risk flags
 
-### Stage 5 — Draft
+### Stage 5: Draft
 
 Generates three pieces of personalised copy grounded **only** in the selected signal:
 
@@ -128,7 +128,7 @@ Input
   └─ Confidence = SKIP ────────────────────────────► Gate 3 SKIP (dossier only, no draft)
 ```
 
-Every path — including all gate failures — produces a **dossier** event with whatever was found, so the UI always has something to render and the user understands what happened.
+Every path: including all gate failures: produces a **dossier** event with whatever was found, so the UI always has something to render and the user understands what happened.
 
 ---
 
@@ -147,7 +147,7 @@ Each request processes **one prospect** (name + company + optional fields) throu
 }
 ```
 
-The dashboard's **CSV upload** feature uses this endpoint — it reads a CSV file, fires one `/api/batch` request per row, and refreshes the run table when all complete.
+The dashboard's **CSV upload** feature uses this endpoint: it reads a CSV file, fires one `/api/batch` request per row, and refreshes the run table when all complete.
 
 ---
 
@@ -187,18 +187,18 @@ All API routes are protected by a **sliding-window IP-based rate limiter** (no e
 
 Blocked responses return HTTP 429 with a `Retry-After` header. The `?limit` parameter on `/api/runs` is also capped at 200 to prevent bulk data scraping.
 
-`/api/run` additionally enforces a **per-session concurrency lock** — only one active pipeline run per browser session at a time.
+`/api/run` additionally enforces a **per-session concurrency lock**: only one active pipeline run per browser session at a time.
 
 ---
 
 ## Tech Stack
 
-- **Framework** — [Next.js](https://nextjs.org/) 16 (App Router, React 19)
-- **AI** — [Anthropic Claude](https://www.anthropic.com/) (`claude-sonnet-4-6` by default) via `@anthropic-ai/sdk`
-- **Web search** — [Tavily](https://tavily.com/) search API
-- **Validation** — [Zod](https://zod.dev/) for all LLM response parsing
-- **UI** — Tailwind CSS, shadcn/ui, Lucide icons
-- **Testing** — [Vitest](https://vitest.dev/)
+- **Framework**: [Next.js](https://nextjs.org/) 16 (App Router, React 19)
+- **AI**: [Anthropic Claude](https://www.anthropic.com/) (`claude-sonnet-4-6` by default) via `@anthropic-ai/sdk`
+- **Web search**: [Tavily](https://tavily.com/) search API
+- **Validation**: [Zod](https://zod.dev/) for all LLM response parsing
+- **UI**: Tailwind CSS, shadcn/ui, Lucide icons
+- **Testing**: [Vitest](https://vitest.dev/)
 
 ---
 
@@ -209,18 +209,18 @@ app/
   page.tsx              # Main prospect form + live dossier view
   dashboard/page.tsx    # Run history dashboard
   api/
-    run/                # POST /api/run   — starts a pipeline run (SSE stream)
-    runs/               # GET  /api/runs  — fetches run history
-    batch/              # POST /api/batch — batch-process multiple prospects
+    run/                # POST /api/run  : starts a pipeline run (SSE stream)
+    runs/               # GET  /api/runs : fetches run history
+    batch/              # POST /api/batch: batch-process multiple prospects
 
 lib/
   pipeline/
     index.ts            # Orchestrates all five stages
-    resolve.ts          # Stage 1 — identity resolution & Gate 1
-    research.ts         # Stage 2 — Tavily web search & Gate 2
-    extract.ts          # Stage 3 — LLM signal extraction
-    judge.ts            # Stage 4 — scoring, ranking, Gate 3 verdict
-    draft.ts            # Stage 5 — outreach copy generation
+    resolve.ts          # Stage 1: identity resolution & Gate 1
+    research.ts         # Stage 2: Tavily web search & Gate 2
+    extract.ts          # Stage 3: LLM signal extraction
+    judge.ts            # Stage 4: scoring, ranking, Gate 3 verdict
+    draft.ts            # Stage 5: outreach copy generation
   anthropic.ts          # Shared Claude client wrapper
   config.ts             # Scoring weights, budgets, default sales context
   types.ts              # All shared TypeScript types
@@ -285,8 +285,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The UI exposes two modes selectable in the prospect form:
 
-- **Live** — performs real Tavily searches and Claude LLM calls (consumes API credits).
-- **Fixture** — uses pre-recorded search results from `tests/fixtures/` for fast, free development and testing.
+- **Live**: performs real Tavily searches and Claude LLM calls (consumes API credits).
+- **Fixture**: uses pre-recorded search results from `tests/fixtures/` for fast, free development and testing.
 
 ---
 
@@ -307,11 +307,11 @@ An **archetype multiplier** (T1–T5) rewards high-intent events and discounts w
 
 | Tier | Signal Example                          | Multiplier | Why                                                                                               |
 | ---- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
-| T1   | New exec hire, funding round            | **2.0×**   | Strongest buying trigger — new leadership and fresh capital directly create new vendor decisions. |
+| T1   | New exec hire, funding round            | **2.0×**   | Strongest buying trigger: new leadership and fresh capital directly create new vendor decisions. |
 | T2   | Acquisition, M&A, AP hiring             | **1.5×**   | High-urgency structural change that surfaces budget and tooling needs within weeks.               |
-| T3   | Product launch, earnings, press release | **1.0×**   | Baseline signal — public and relevant but common enough to be table stakes.                       |
-| T4   | Conference / speaking engagement        | **0.75×**  | Soft signal — shows industry engagement but no clear purchase intent.                             |
-| T5   | Podcast, LinkedIn post, tweet           | **0.5×**   | Weakest signal — thought leadership activity with no direct business-change indicator.            |
+| T3   | Product launch, earnings, press release | **1.0×**   | Baseline signal: public and relevant but common enough to be table stakes.                       |
+| T4   | Conference / speaking engagement        | **0.75×**  | Soft signal: shows industry engagement but no clear purchase intent.                             |
+| T5   | Podcast, LinkedIn post, tweet           | **0.5×**   | Weakest signal: thought leadership activity with no direct business-change indicator.            |
 
 Final grades: **A** ≥ 24, **B** ≥ 18, **C** ≥ 12, **D** < 12. Signals below 13 points are not selected.
 
@@ -321,13 +321,13 @@ Final grades: **A** ≥ 24, **B** ≥ 18, **C** ≥ 12, **D** < 12. Signals belo
 
 Three gates prevent low-quality drafts from being produced:
 
-- **Gate 1 (Resolve)** — blocks if prospect identity confidence is `LOW` (no company + no disambiguator).
-- **Gate 2 (Research)** — skips draft if no web sources are found for the prospect.
-- **Gate 3 (Draft)** — only generates outreach copy when the overall confidence verdict is `HIGH` or `MEDIUM`.
+- **Gate 1 (Resolve)**: blocks if prospect identity confidence is `LOW` (no company + no disambiguator).
+- **Gate 2 (Research)**: skips draft if no web sources are found for the prospect.
+- **Gate 3 (Draft)**: only generates outreach copy when the overall confidence verdict is `HIGH` or `MEDIUM`.
 
 ---
 
-## Research Foundation — InterDeepResearch
+## Research Foundation: InterDeepResearch
 
 Omen's dossier UX is informed by the principles in:
 
@@ -336,7 +336,7 @@ Omen's dossier UX is informed by the principles in:
 > arXiv:2603.12608 · CC BY 4.0
 > https://arxiv.org/abs/2603.12608
 
-The paper argues against the "autonomous query-to-report" paradigm — where an AI agent silently produces a finished output and the user is left as a passive consumer. Instead it proposes embedding the user as an **active collaborator** who can observe, inspect, and steer the research process at every step.
+The paper argues against the "autonomous query-to-report" paradigm: where an AI agent silently produces a finished output and the user is left as a passive consumer. Instead it proposes embedding the user as an **active collaborator** who can observe, inspect, and steer the research process at every step.
 
 ### How Omen implements these principles
 
@@ -344,9 +344,9 @@ The paper argues against the "autonomous query-to-report" paradigm — where an 
 | --- | --- |
 | **Transparency in reasoning** | Every signal displays a 6-dimension score breakdown (persona fit, business trigger, specificity, freshness, source credibility, mention safety) so the user understands *why* a signal scored the way it did |
 | **Evidence provenance** | Each source shows its name, publication date with a freshness colour (green < 2 weeks, amber < 3 months, red older), a snippet preview, and a direct link to the original URL |
-| **Steering / human override** | Any ranked signal can be **pinned** by the user to override the agent's selection — the dossier and draft regenerate against the pinned signal |
+| **Steering / human override** | Any ranked signal can be **pinned** by the user to override the agent's selection: the dossier and draft regenerate against the pinned signal |
 | **Rejected alternatives with reasons** | Every signal that was considered but not chosen is shown with its score and the specific reason it was not selected (rank, grade, safety classification) |
-| **Honest abstention** | Pipeline explicitly skips draft generation when evidence is thin, identity is ambiguous, or all signals are below threshold — with a plain-language explanation |
+| **Honest abstention** | Pipeline explicitly skips draft generation when evidence is thin, identity is ambiguous, or all signals are below threshold: with a plain-language explanation |
 | **Process observability** | The real-time stage timeline (Resolve → Research → Extract → Judge → Draft) is visible and expandable while the pipeline runs, so the user sees the research path, not just the final output |
 | **Safety classification** | Every signal is classified (`mentionable` / `usable_but_do_not_mention` / `disqualifying`) and the draft copy is constrained by that classification |
 
@@ -354,7 +354,7 @@ The paper argues against the "autonomous query-to-report" paradigm — where an 
 
 > *"Do not just show the final outreach copy. Show the research path: what was found, what was selected, what was rejected, and why."*
 
-This is why the Omen dossier exposes five distinct sections — Selected Signal, Draft, All Ranked Signals, Rejected Signals, and Evidence Sources — rather than surfacing only the generated message.
+This is why the Omen dossier exposes five distinct sections: Selected Signal, Draft, All Ranked Signals, Rejected Signals, and Evidence Sources: rather than surfacing only the generated message.
 
 ---
 
