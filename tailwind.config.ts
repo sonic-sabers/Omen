@@ -48,6 +48,20 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
+      keyframes: {
+        "slide-in-right": {
+          from: { transform: "translateX(100%)" },
+          to:   { transform: "translateX(0)" },
+        },
+        "fade-in": {
+          from: { opacity: "0" },
+          to:   { opacity: "1" },
+        },
+      },
+      animation: {
+        "slide-in-right": "slide-in-right 0.3s cubic-bezier(0.16,1,0.3,1)",
+        "fade-in":        "fade-in 0.2s ease-out",
+      },
     },
   },
   plugins: [],

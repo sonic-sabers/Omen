@@ -40,19 +40,14 @@ export default function NotFound() {
       <div className="relative flex flex-col items-center text-center animate-[fadeInUp_0.6s_ease-out_both]">
 
         {/* Logo mark */}
-        <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20 animate-[fadeIn_0.4s_ease-out_both]">
-          <span className="text-xl font-black tracking-tighter text-primary-foreground">O</span>
+        <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20 animate-[fadeIn_0.4s_ease-out_both]">
+          <span className="text-lg font-black tracking-tighter text-primary-foreground">O</span>
         </div>
 
         {/* 404 number */}
-        <div className="relative mb-4">
-          <p className="select-none text-[120px] font-black leading-none tracking-tighter text-foreground/[0.04] sm:text-[160px]">
-            404
-          </p>
-          <p className="absolute inset-0 flex items-center justify-center text-[72px] font-black leading-none tracking-tighter text-foreground/10 sm:text-[96px]">
-            404
-          </p>
-        </div>
+        <p className="mb-2 select-none text-[96px] font-black leading-none tracking-tighter text-foreground/[0.07] sm:text-[128px] animate-[fadeInUp_0.5s_ease-out_0.05s_both]">
+          404
+        </p>
 
         {/* Message */}
         <h1 className="mb-2 text-xl font-bold tracking-tight text-foreground animate-[fadeInUp_0.5s_ease-out_0.15s_both]">

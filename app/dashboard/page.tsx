@@ -49,27 +49,37 @@ export default function DashboardPage() {
     : 0;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.3))]">
-      <div className="mx-auto max-w-6xl px-6 py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.08),_transparent_45%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.32))]">
+      <div className="mx-auto max-w-7xl p-4 md:p-8">
 
         {/* ── Header ── */}
-        <div className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+        <header className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
-          <div className="flex items-center gap-3 px-5 py-4">
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            <div className="flex items-center gap-3.5">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/30">
+                <span className="text-sm font-black tracking-tighter text-primary-foreground">O</span>
+                <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-bold tracking-tight">Run Dashboard</h1>
+                  <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
+                    Sales Intelligence
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/70">All research runs and batch results</p>
+              </div>
+            </div>
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
             >
               <ArrowLeft className="h-3 w-3" />
               Back
             </Link>
-            <div className="h-4 w-px bg-border" />
-            <div>
-              <h1 className="text-sm font-bold tracking-tight">Run Dashboard</h1>
-              <p className="text-[11px] text-muted-foreground/70">All research runs and batch results</p>
-            </div>
           </div>
-        </div>
+        </header>
 
         {/* ── Stats row (only with data) ── */}
         {runs.length > 0 && (
