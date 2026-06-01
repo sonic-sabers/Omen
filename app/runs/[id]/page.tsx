@@ -1,8 +1,34 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ResearchDossierView } from "@/components/ResearchDossier";
 import { getRun } from "@/lib/store";
 import { ArrowLeft } from "lucide-react";
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params;
+  const run = getRun(id);
+  if (!run) return { title: "Run Not Found" };
+
+  const name = run.dossier.prospect.name;
+  const company = run.dossier.prospect.company;
+  const title = `${name} · ${company}`;
+
+  return {
+    title,
+    description: `Research dossier for ${name}, ${run.dossier.prospect.title ?? ""} at ${company}.`.replace(/,\s*,/, ",").trim(),
+    openGraph: {
+      title: `${title} | Omen`,
+      description: `Research dossier for ${name} at ${company}.`,
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
 
 export default async function RunDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
