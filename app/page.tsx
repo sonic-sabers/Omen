@@ -1,55 +1,17 @@
 "use client";
 
-import { useMemo, useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { DEFAULT_SALES_CONTEXT } from "@/lib/config";
-import type { PipelineEvent, Prospect, SalesContext } from "@/lib/types";
+import type { Prospect, SalesContext } from "@/lib/types";
+import { loadSession, usePageSession } from "@/lib/usePageSession";
+import { useRunPipeline } from "@/lib/useRunPipeline";
+import { DossierFallback } from "@/components/DossierFallback";
 import { ProspectForm } from "@/components/ProspectForm";
 import { StatusTimeline } from "@/components/StatusTimeline";
 import { ResearchDossierView } from "@/components/ResearchDossier";
 import { SalesContextForm } from "@/components/SalesContextForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, Clock } from "lucide-react";
-
-function DossierFallback({ events }: { events: PipelineEvent[] }) {
-  const errorEvent = [...events].reverse().find((e): e is Extract<PipelineEvent, { type: "error" }> => e.type === "error");
-  const isTimeout = errorEvent?.message?.includes("Timed out") || errorEvent?.message?.includes("60 seconds");
-  const isNoSignal = errorEvent?.message?.includes("Gate 2") || errorEvent?.message?.includes("Gate 3") || errorEvent?.message?.includes("No signal");
-  const isIdentity = errorEvent?.message?.includes("Gate 1") || errorEvent?.message?.includes("identity");
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isTimeout ? "bg-amber-100" : "bg-red-50"}`}>
-        {isTimeout
-          ? <Clock className="h-5 w-5 text-amber-600" />
-          : <AlertTriangle className="h-5 w-5 text-red-400" />}
-      </div>
-      <div>
-        <p className="text-sm font-medium">
-          {isTimeout ? "Research timed out" : isIdentity ? "Could not verify identity" : isNoSignal ? "No usable signal found" : "Something went wrong"}
-        </p>
-        <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-          {isTimeout
-            ? "The search took longer than 60 seconds. Try again, searches can vary in speed."
-            : isIdentity
-            ? "Add a LinkedIn URL, job title, or company name to help confirm the right person."
-            : isNoSignal
-            ? "No recent public signals found for this person. Try a different prospect or check the spelling."
-            : errorEvent?.message ?? "An unexpected error occurred. Please try again."}
-        </p>
-      </div>
-    </div>
-  );
-}
-import Link from "next/link";
-
-const SESSION_KEY = "omen_page_state";
-
-function loadSession() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
 
 export default function HomePage() {
   const saved = useMemo(() => loadSession(), []);
@@ -64,119 +26,19 @@ export default function HomePage() {
   const [salesContext, setSalesContext] = useState<SalesContext>(
     saved?.salesContext ?? DEFAULT_SALES_CONTEXT,
   );
-  const [events, setEvents] = useState<PipelineEvent[]>(saved?.events ?? []);
-  const [running, setRunning] = useState(false);
 
-  // Persist state to sessionStorage on every change
-  const persist = useCallback(() => {
-    try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ mode, fixtureId, prospect, salesContext, events }));
-    } catch { /* quota exceeded — ignore */ }
-  }, [mode, fixtureId, prospect, salesContext, events]);
+  const { events, running, startRun } = useRunPipeline(mode, fixtureId, prospect, salesContext);
 
-  useEffect(() => { persist(); }, [persist]);
+  usePageSession({ mode, fixtureId, prospect, salesContext, events });
 
   const dossier = useMemo(() => {
     const d = events.find((e) => e.type === "dossier");
     return d && d.type === "dossier" ? d.dossier : undefined;
   }, [events]);
 
-  async function startRun() {
-    setRunning(true);
-    setEvents([]);
-
-    const sessionId = getSessionId();
-    const abortCtrl = new AbortController();
-    // Client-side 60s hard timeout
-    const timeoutId = setTimeout(() => abortCtrl.abort("timeout"), 60_000);
-
-    let response: Response;
-    try {
-      response = await fetch("/api/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-session-id": sessionId },
-        body: JSON.stringify({ mode, fixtureId, prospect, salesContext }),
-        signal: abortCtrl.signal,
-      });
-    } catch (err) {
-      clearTimeout(timeoutId);
-      const isTimeout = abortCtrl.signal.aborted;
-      setEvents([
-        {
-          type: "error",
-          message: isTimeout
-            ? "Timed out after 60 seconds. The research took too long. Try again or simplify the prospect details."
-            : "Network error. Check your connection and try again.",
-        },
-        { type: "done" },
-      ]);
-      setRunning(false);
-      return;
-    }
-
-    if (!response.ok || !response.body) {
-      clearTimeout(timeoutId);
-      let message = "Failed to start run.";
-      try {
-        const data = (await response.json()) as { error?: string };
-        if (data?.error) message = data.error;
-      } catch { /* ignore */ }
-      if (response.status === 429) message = "Too many requests. Wait a moment and try again.";
-      if (response.status === 503) message = "Service temporarily unavailable. Try again in a few seconds.";
-      setEvents([{ type: "error", message }, { type: "done" }]);
-      setRunning(false);
-      return;
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const chunks = buffer.split("\n\n");
-        buffer = chunks.pop() ?? "";
-
-        for (const chunk of chunks) {
-          const line = chunk.split("\n").find((l) => l.startsWith("data: "));
-          if (!line) continue;
-          try {
-            const event = JSON.parse(line.slice(6)) as PipelineEvent;
-            setEvents((prev) => [...prev, event]);
-            if (event.type === "done") {
-              clearTimeout(timeoutId);
-              setRunning(false);
-            }
-          } catch { /* ignore malformed SSE */ }
-        }
-      }
-    } catch (err) {
-      clearTimeout(timeoutId);
-      const isTimeout = abortCtrl.signal.aborted;
-      setEvents((prev) => [
-        ...prev,
-        {
-          type: "error",
-          message: isTimeout
-            ? "Timed out after 60 seconds. Partial results shown above."
-            : "Stream interrupted. Partial results shown above.",
-        },
-        { type: "done" },
-      ]);
-    }
-
-    clearTimeout(timeoutId);
-    setRunning(false);
-  }
-
   const stageEvents = events.filter((e) => e.type === "stage");
-  const latestStage = stageEvents.length
-    ? stageEvents[stageEvents.length - 1]
-    : null;
   const hasError = events.some((e) => e.type === "error");
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.08),_transparent_45%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.32))]">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
@@ -299,12 +161,4 @@ export default function HomePage() {
       </div>
     </main>
   );
-}
-
-let clientSessionId: string | null = null;
-
-function getSessionId(): string {
-  if (clientSessionId) return clientSessionId;
-  clientSessionId = `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  return clientSessionId;
 }
