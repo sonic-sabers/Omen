@@ -5,8 +5,14 @@ export const DEFAULT_SALES_CONTEXT: SalesContext = {
   offering: "AI-powered B2B sales intelligence and outreach automation",
   icp: "B2B SaaS companies with 20-500 employees",
   targetPersona: "VP Sales",
-  painHypotheses: ["Low outbound reply rates", "Limited personalization at scale"],
-  proofPoints: ["Evidence-backed signal selection", "Human-reviewable outreach drafts"],
+  painHypotheses: [
+    "Low outbound reply rates",
+    "Limited personalization at scale",
+  ],
+  proofPoints: [
+    "Evidence-backed signal selection",
+    "Human-reviewable outreach drafts",
+  ],
   tone: "consultative",
 };
 
@@ -27,11 +33,11 @@ export const RANKING_CONFIG = {
     mentionSafety: 0.07,
   },
   archetypeMultipliers: {
-    T1: 1.32,
-    T2: 1.14,
-    T3: 0.98,
-    T4: 0.79,
-    T5: 0.67,
+    T1: 2.0,
+    T2: 1.5,
+    T3: 1.0,
+    T4: 0.75,
+    T5: 0.5,
   },
   thresholds: {
     selectMinScore: 13,

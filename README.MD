@@ -12,15 +12,182 @@ A single run flows through five sequential stages:
 Resolve → Research → Extract → Judge → Draft
 ```
 
-| Stage        | What it does                                                                                                                                                                                                                    |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Resolve**  | Normalises prospect identity and gates on confidence (HIGH / MEDIUM / LOW). Blocks runs with too little info (Gate 1).                                                                                                          |
-| **Research** | Searches the web via Tavily for recent, relevant signals about the prospect and their company. Blocks if nothing found (Gate 2).                                                                                                |
-| **Extract**  | Uses Claude to parse raw search snippets into structured signal candidates, classified as `person`, `company`, or `generic`. Generic signals are dropped as noise.                                                              |
-| **Judge**    | Scores every candidate across six weighted dimensions (freshness, specificity, persona relevance, business-pain fit, source credibility, mention safety), applies archetype-tier multipliers, and selects the best safe signal. |
-| **Draft**    | If the overall confidence verdict is HIGH or MEDIUM, Claude writes a personalised email subject + body + LinkedIn note grounded only in the selected signal (Gate 3).                                                           |
+Each stage streams a real-time status event (`running` → `complete` | `error`) back to the browser via **Server-Sent Events (SSE)**, so the UI updates live as each stage finishes.
 
-Events stream back to the UI in real-time via **Server-Sent Events (SSE)**.
+### Stage 1 — Resolve
+
+Normalises and validates the prospect's identity before any external call is made.
+
+- Trims whitespace from all fields
+- Scores identity confidence as **HIGH**, **MEDIUM**, or **LOW** based on:
+  - Full name + company + at least one disambiguator (title / LinkedIn URL / location) → **HIGH**
+  - Full name + company only → **MEDIUM**
+  - Missing company or only a first name → **LOW**
+- Detects common/ambiguous names (e.g. "John Smith") and flags them unless a LinkedIn URL is present
+- **Gate 1**: if confidence is `LOW`, the run stops here with a descriptive error. No API calls are made.
+
+### Stage 2 — Research
+
+Fires **10 parallel Tavily searches** across distinct signal categories to maximise coverage:
+
+| Category           | Example query                                      |
+| ------------------ | -------------------------------------------------- |
+| News / press       | `{name} {company} news press release announcement` |
+| Funding            | `{name} {company} funding investment series`       |
+| M&A                | `{name} {company} acquisition merger partnership`  |
+| Executive movement | `{name} {title} appointed hired joined promoted`   |
+| Media / podcasts   | `{name} podcast interview keynote speaker`         |
+| Conferences        | `{name} conference talk presentation webinar`      |
+| Company hiring     | `{company} hiring expansion growth`                |
+| Product signals    | `{company} product launch release announcement`    |
+| LinkedIn (direct)  | `{name} {company} site:linkedin.com`               |
+| LinkedIn (profile) | `{name} {company} linkedin profile`                |
+
+Results are deduplicated by URL, then truncated to a max of 20 sources / 12,000 characters before being passed downstream (to keep LLM costs predictable).
+
+**Gate 2**: if zero sources are found after deduplication, the pipeline yields a partial dossier with fallback notes and stops — no extract, judge, or draft stage runs.
+
+### Stage 3 — Extract
+
+Converts raw search snippets into structured **signal candidates**.
+
+- In **live mode**: Claude is asked to identify concrete, outreach-worthy events from the source snippets and return them as JSON (`summary`, `sourceIndexes`, `signalType`).
+- Each candidate is classified as one of:
+  - `person` — about the specific individual (highest value)
+  - `company` — about their organisation (useful but lower specificity)
+  - `generic` — industry noise (dropped immediately)
+- Candidates flagged as `unverified` or `rumor` are filtered out before Claude sees them (stale content older than 2 years is also dropped).
+- In **fixture mode**: the LLM call is skipped; a deterministic keyword-based fallback extracts candidates directly from snippets.
+
+### Stage 4 — Judge
+
+Scores every candidate and picks the single best safe signal.
+
+Each candidate receives a score out of **30** across six weighted dimensions, then an archetype-tier multiplier is applied (see [Signal Scoring](#signal-scoring) below). Signals older than 180 days receive a 0.74× stale penalty.
+
+Safety classification happens before selection:
+
+| Classification              | Meaning                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| `mentionable`               | Safe to reference directly in outreach                      |
+| `usable_but_do_not_mention` | Context is useful but must not be cited (e.g. layoffs)      |
+| `disqualifying`             | Contains scandal, fraud, unverified rumor — vetoed entirely |
+
+In **live mode** Claude also performs a final relevance + persona-fit check to confirm the selection. The chosen signal must score ≥ 13 and not be `disqualifying`.
+
+A **confidence verdict** (`HIGH` / `MEDIUM` / `SKIP`) is then calculated from:
+
+- Identity confidence (from Stage 1)
+- Number of sources found
+- Selected signal grade and score
+- Count of risk flags
+
+### Stage 5 — Draft
+
+Generates three pieces of personalised copy grounded **only** in the selected signal:
+
+- **Email subject** (≤ 140 chars)
+- **Email body** (≤ 1,600 chars)
+- **LinkedIn message** (≤ 500 chars)
+
+**Gate 3**: drafts are only produced when confidence is `HIGH` or `MEDIUM`. A `SKIP` verdict yields a dossier with no draft and a clear explanation of why.
+
+If the signal's safety is `usable_but_do_not_mention`, the draft avoids referencing it directly and a warning is attached to the output.
+
+---
+
+## Pipeline Outcome Flows
+
+Not every run follows the happy path. Here are all the flows the pipeline handles:
+
+```
+Input
+  │
+  ▼
+[Resolve]
+  ├─ LOW confidence ──────────────────────────────► Gate 1 BLOCKED (no further stages)
+  │
+  ▼
+[Research]
+  ├─ 0 sources found ─────────────────────────────► Gate 2 SKIP  (partial dossier, no draft)
+  │
+  ▼
+[Extract]
+  │  (all candidates filtered as noise/generic)
+  ├─ 0 valid candidates ──────────────────────────► Judge returns empty → Gate 3 SKIP
+  │
+  ▼
+[Judge]
+  ├─ All candidates disqualifying / below threshold ► Gate 3 SKIP (dossier, no draft)
+  ├─ Best signal is usable_but_do_not_mention ─────► Draft generated, warning attached
+  │
+  ▼
+[Draft]
+  ├─ Confidence = HIGH ────────────────────────────► Full draft  (email + LinkedIn)
+  ├─ Confidence = MEDIUM ──────────────────────────► Full draft  (email + LinkedIn)
+  └─ Confidence = SKIP ────────────────────────────► Gate 3 SKIP (dossier only, no draft)
+```
+
+Every path — including all gate failures — produces a **dossier** event with whatever was found, so the UI always has something to render and the user understands what happened.
+
+---
+
+## Batch Processing
+
+Beyond the single-prospect UI, Omen supports bulk runs via `POST /api/batch`.
+
+Each request processes **one prospect** (name + company + optional fields) through the full live pipeline and returns a compact summary:
+
+```json
+{
+  "id": "run_1717..._abc123",
+  "confidenceTier": "HIGH",
+  "hookSummary": "Recent Series B funding signals active growth...",
+  "draftProduced": true
+}
+```
+
+The dashboard's **CSV upload** feature uses this endpoint — it reads a CSV file, fires one `/api/batch` request per row, and refreshes the run table when all complete.
+
+---
+
+## Metrics
+
+Every completed run automatically compiles the following metrics, visible in the dashboard:
+
+| Metric                     | What it measures                                                             |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| **Hook Specificity Rate**  | % of signals that are person-level (vs company-level)                        |
+| **Grounding Fidelity**     | % of claims in the selected signal that trace back to a cited source         |
+| **Honest Abstention Rate** | Whether the pipeline correctly skipped thin-signal runs (vs drafting anyway) |
+| **Time to Draft**          | End-to-end wall-clock duration for the run                                   |
+| **Signal Breakdown**       | Count of person / company signals extracted                                  |
+
+---
+
+## Storage
+
+Run records are kept **in-memory** on the server (no database required):
+
+- Max **200 runs** stored at once; oldest are evicted when the cap is hit.
+- Each record expires after **30 days**.
+- Records survive as long as the Next.js server process is running. A server restart clears all history.
+
+---
+
+## Rate Limiting
+
+All API routes are protected by a **sliding-window IP-based rate limiter** (no external dependency):
+
+| Route             | Window | Max requests | Block duration |
+| ----------------- | ------ | ------------ | -------------- |
+| `POST /api/run`   | 60s    | 10           | 60s            |
+| `POST /api/batch` | 60s    | 5            | 120s           |
+| `GET /api/runs`   | 60s    | 60           | 30s            |
+
+Blocked responses return HTTP 429 with a `Retry-After` header. The `?limit` parameter on `/api/runs` is also capped at 200 to prevent bulk data scraping.
+
+`/api/run` additionally enforces a **per-session concurrency lock** — only one active pipeline run per browser session at a time.
 
 ---
 
@@ -136,15 +303,15 @@ Signals are scored out of **30 points** across six dimensions with the following
 | Source Credibility | 9%     |
 | Mention Safety     | 7%     |
 
-An **archetype multiplier** (T1–T5) is applied based on signal type:
+An **archetype multiplier** (T1–T5) rewards high-intent events and discounts weak ones:
 
-| Tier | Signal Example                          | Multiplier |
-| ---- | --------------------------------------- | ---------- |
-| T1   | New exec hire, funding round            | 1.32×      |
-| T2   | Acquisition, M&A, AP hiring             | 1.14×      |
-| T3   | Product launch, earnings, press release | 0.98×      |
-| T4   | Conference / speaker                    | 0.79×      |
-| T5   | Podcast, LinkedIn post                  | 0.67×      |
+| Tier | Signal Example                          | Multiplier | Why                                                                                               |
+| ---- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| T1   | New exec hire, funding round            | **2.0×**   | Strongest buying trigger — new leadership and fresh capital directly create new vendor decisions. |
+| T2   | Acquisition, M&A, AP hiring             | **1.5×**   | High-urgency structural change that surfaces budget and tooling needs within weeks.               |
+| T3   | Product launch, earnings, press release | **1.0×**   | Baseline signal — public and relevant but common enough to be table stakes.                       |
+| T4   | Conference / speaking engagement        | **0.75×**  | Soft signal — shows industry engagement but no clear purchase intent.                             |
+| T5   | Podcast, LinkedIn post, tweet           | **0.5×**   | Weakest signal — thought leadership activity with no direct business-change indicator.            |
 
 Final grades: **A** ≥ 24, **B** ≥ 18, **C** ≥ 12, **D** < 12. Signals below 13 points are not selected.
 
