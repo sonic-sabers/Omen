@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { DEFAULT_SALES_CONTEXT } from "@/lib/config";
 import type { PipelineEvent, Prospect, SalesContext } from "@/lib/types";
 import { ProspectForm } from "@/components/ProspectForm";
@@ -29,7 +29,7 @@ function DossierFallback({ events }: { events: PipelineEvent[] }) {
         </p>
         <p className="mt-1 max-w-sm text-xs text-muted-foreground">
           {isTimeout
-            ? "The search took longer than 60 seconds. Try again — searches can vary in speed."
+            ? "The search took longer than 60 seconds. Try again, searches can vary in speed."
             : isIdentity
             ? "Add a LinkedIn URL, job title, or company name to help confirm the right person."
             : isNoSignal
@@ -40,22 +40,41 @@ function DossierFallback({ events }: { events: PipelineEvent[] }) {
     </div>
   );
 }
-import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
+const SESSION_KEY = "omen_page_state";
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
 export default function HomePage() {
-  const [mode, setMode] = useState<"fixture" | "live">("live");
-  const [fixtureId, setFixtureId] = useState("funding-success");
-  const [prospect, setProspect] = useState<Prospect>({
+  const saved = useMemo(() => loadSession(), []);
+
+  const [mode, setMode] = useState<"fixture" | "live">(saved?.mode ?? "live");
+  const [fixtureId, setFixtureId] = useState(saved?.fixtureId ?? "funding-success");
+  const [prospect, setProspect] = useState<Prospect>(saved?.prospect ?? {
     name: "Satya Nadella",
     company: "Microsoft",
     title: "Chairman and CEO",
   });
   const [salesContext, setSalesContext] = useState<SalesContext>(
-    DEFAULT_SALES_CONTEXT,
+    saved?.salesContext ?? DEFAULT_SALES_CONTEXT,
   );
-  const [events, setEvents] = useState<PipelineEvent[]>([]);
+  const [events, setEvents] = useState<PipelineEvent[]>(saved?.events ?? []);
   const [running, setRunning] = useState(false);
+
+  // Persist state to sessionStorage on every change
+  const persist = useCallback(() => {
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ mode, fixtureId, prospect, salesContext, events }));
+    } catch { /* quota exceeded — ignore */ }
+  }, [mode, fixtureId, prospect, salesContext, events]);
+
+  useEffect(() => { persist(); }, [persist]);
 
   const dossier = useMemo(() => {
     const d = events.find((e) => e.type === "dossier");
@@ -86,7 +105,7 @@ export default function HomePage() {
         {
           type: "error",
           message: isTimeout
-            ? "Timed out after 60 seconds. The research took too long — try again or simplify the prospect details."
+            ? "Timed out after 60 seconds. The research took too long. Try again or simplify the prospect details."
             : "Network error. Check your connection and try again.",
         },
         { type: "done" },
@@ -102,7 +121,7 @@ export default function HomePage() {
         const data = (await response.json()) as { error?: string };
         if (data?.error) message = data.error;
       } catch { /* ignore */ }
-      if (response.status === 429) message = "Too many requests — wait a moment and try again.";
+      if (response.status === 429) message = "Too many requests. Wait a moment and try again.";
       if (response.status === 503) message = "Service temporarily unavailable. Try again in a few seconds.";
       setEvents([{ type: "error", message }, { type: "done" }]);
       setRunning(false);
@@ -161,47 +180,54 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.08),_transparent_45%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.32))]">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
-        <header className="mb-6 rounded-xl border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow-sm">
-                O
+        <header className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+          {/* Top accent line */}
+          <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
+
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            {/* Brand */}
+            <div className="flex items-center gap-3.5">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary shadow-md shadow-primary/30">
+                <span className="text-sm font-black tracking-tighter text-primary-foreground">O</span>
+                <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-semibold tracking-tight">Omen</h1>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground">Smart Sales Research</span>
+                  <h1 className="text-sm font-bold tracking-tight">Omen</h1>
+                  <span className="hidden rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-block">
+                    Sales Intelligence
+                  </span>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Enter a person's name, research them online, and get a ready-to-send message.
+                <p className="mt-0.5 text-[11px] text-muted-foreground/70">
+                  Research any prospect online and get a personalised message.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  running
-                    ? "secondary"
-                    : hasError
-                      ? "destructive"
-                      : dossier
-                        ? "default"
-                        : "outline"
-                }
-                className="text-xs"
-              >
-                {running
-                  ? "Running"
+
+            {/* Status + nav */}
+            <div className="flex items-center gap-2.5">
+              {/* Status pill */}
+              <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                running
+                  ? "border-blue-200 bg-blue-50 text-blue-700"
                   : hasError
-                    ? "Error"
-                    : dossier
-                      ? "Ready"
-                      : "Idle"}
-              </Badge>
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : dossier
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-border bg-muted/40 text-muted-foreground"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${
+                  running ? "animate-pulse bg-blue-500"
+                  : hasError ? "bg-red-500"
+                  : dossier ? "bg-emerald-500"
+                  : "bg-muted-foreground/40"
+                }`} />
+                {running ? "Researching" : hasError ? "Error" : dossier ? "Ready" : "Idle"}
+              </div>
+
               <Link
                 href="/dashboard"
-                className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
               >
                 View Runs
               </Link>
@@ -211,9 +237,9 @@ export default function HomePage() {
 
         <div className="grid gap-x-6 gap-y-3 lg:grid-cols-[420px_1fr]">
           <p className="text-sm font-medium text-muted-foreground">
-            Step 1 — Fill in the details
+            Step 1: Fill in the details
           </p>
-          <p className="text-sm font-medium text-muted-foreground">Step 2 — See results here</p>
+          <p className="text-sm font-medium text-muted-foreground">Step 2: See results here</p>
 
           <section className="space-y-4">
             <ProspectForm
