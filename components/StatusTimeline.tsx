@@ -90,7 +90,7 @@ export function StatusTimeline({ events, running }: { events: StageUpdateEvent[]
       </button>
 
       {/* ── Animated expandable detail ── */}
-      <div className={`transition-all duration-200 ease-in-out ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="border-t border-border px-3 py-2 space-y-1.5">
           {statuses.map((item, idx) => {
             const done = item.status === "complete" || item.status === "error";

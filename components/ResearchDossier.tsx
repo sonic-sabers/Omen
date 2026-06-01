@@ -5,7 +5,7 @@ import type { ResearchDossier, EvidenceSource, ScoreBreakdown, RankedSignal } fr
 import { DraftCard } from "@/components/DraftCard";
 import {
   ExternalLink, TrendingUp, AlertTriangle, FileSearch,
-  XCircle, Mail, ChevronDown, Info, Pin, BarChart2,
+  XCircle, Mail, ChevronDown, Pin, BarChart2,
 } from "lucide-react";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -97,10 +97,10 @@ function ScoreBreakdownPanel({ breakdown }: { breakdown: ScoreBreakdown }) {
             >
               {label}
             </span>
-            <div className="flex-1 h-1.5 rounded-full bg-border/60">
+            <div className="flex-1 h-1.5 rounded-full bg-border/60 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${val >= 4 ? "bg-emerald-500" : val >= 3 ? "bg-primary" : val >= 2 ? "bg-amber-400" : "bg-red-400"}`}
-                style={{ width: `${pct}%` }}
+                className={`h-full rounded-full transition-all duration-500 ease-out ${val >= 4 ? "bg-emerald-500" : val >= 3 ? "bg-primary" : val >= 2 ? "bg-amber-400" : "bg-red-400"}`}
+                style={{ width: `${pct}%`, transitionDelay: `${dims.findIndex(d => d.key === key) * 60}ms` }}
               />
             </div>
             <span className="w-6 shrink-0 text-right text-[10px] font-medium text-muted-foreground">{val}/5</span>
@@ -126,16 +126,18 @@ function Section({
   return (
     <div className={`rounded-xl border ${accent ? "border-primary/30 bg-primary/5" : "border-border bg-card"} p-3`}>
       <div
-        className={`flex items-center gap-1.5 ${collapsible ? "cursor-pointer select-none" : ""}`}
+        className={`flex items-center gap-1.5 ${collapsible ? "cursor-pointer select-none hover:opacity-80" : ""}`}
         onClick={collapsible ? () => setOpen((v) => !v) : undefined}
       >
         <span className={accent ? "text-primary" : "text-muted-foreground"}>{icon}</span>
         <span className="flex-1 text-xs font-semibold tracking-tight">{title}</span>
         {collapsible && (
-          <ChevronDown className={`h-3 w-3 text-muted-foreground/50 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-3 w-3 text-muted-foreground/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         )}
       </div>
-      {(!collapsible || open) && <div className="mt-2">{children}</div>}
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open || !collapsible ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="mt-2">{children}</div>
+      </div>
     </div>
   );
 }
@@ -148,63 +150,33 @@ function RankedSignalRow({
   signal,
   isSelected,
   isPinned,
-  onPin,
 }: {
   signal: RankedSignal;
   isSelected: boolean;
   isPinned: boolean;
-  onPin: () => void;
 }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   return (
-    <div className={`group/row rounded-lg border transition-all ${isSelected || isPinned ? "border-primary/30 bg-primary/5 shadow-sm" : "border-transparent bg-muted/40 hover:border-border hover:bg-muted/70 hover:shadow-sm cursor-pointer"}`}
-      onClick={() => !isSelected && !isPinned && setShowBreakdown((v) => !v)}
+    <div
+      className={`group/row rounded-lg border transition-all cursor-pointer ${isSelected || isPinned ? "border-primary/30 bg-primary/5 shadow-sm" : "border-transparent bg-muted/40 hover:border-border hover:bg-muted/70 hover:shadow-sm"}`}
+      onClick={() => setShowBreakdown((v) => !v)}
     >
       <div className="flex items-center gap-2 px-3 py-2">
         <span className={`text-[10px] font-bold shrink-0 ${isSelected || isPinned ? "text-primary" : "text-muted-foreground"}`}>
           #{signal.rank}
         </span>
         <div className="flex-1 min-w-0 leading-snug text-xs">{signal.summary}</div>
-        {/* Subtle "click to expand" cue on non-selected rows */}
-        {!isSelected && !isPinned && (
-          <ChevronDown className={`h-3 w-3 shrink-0 text-muted-foreground/40 transition-transform group-hover/row:text-muted-foreground ${showBreakdown ? "rotate-180" : ""}`} />
-        )}
-        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 items-center gap-2">
           <ScoreChip score={signal.score} small />
-          {/* Steering: inspect breakdown */}
-          <span className="group/info relative inline-flex">
-            <button
-              onClick={() => setShowBreakdown((v) => !v)}
-              className={`rounded p-0.5 transition-colors ${showBreakdown ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
-            >
-              <Info className="h-3 w-3" />
-            </button>
-            <span className="pointer-events-none absolute bottom-full right-0 z-[9999] mb-1.5 w-28 rounded-md bg-gray-900 px-2 py-1.5 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/info:opacity-100">
-              {showBreakdown ? "Hide score breakdown" : "Why this score?"}
-              <span className="absolute right-2 top-full border-4 border-transparent border-t-gray-900" />
-            </span>
-          </span>
-          {/* Steering: pin this signal */}
-          <span className="group/pin relative inline-flex">
-            <button
-              onClick={onPin}
-              className={`rounded p-0.5 transition-colors ${isPinned ? "text-primary bg-primary/10" : "text-muted-foreground/40 hover:text-primary"}`}
-            >
-              <Pin className="h-3 w-3" />
-            </button>
-            <span className="pointer-events-none absolute bottom-full right-0 z-[9999] mb-1.5 w-36 rounded-md bg-gray-900 px-2 py-1.5 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/pin:opacity-100">
-              {isPinned ? "Click to restore agent's original pick" : "Use this signal instead of the agent's choice"}
-              <span className="absolute right-2 top-full border-4 border-transparent border-t-gray-900" />
-            </span>
-          </span>
+          <ChevronDown className={`h-3 w-3 shrink-0 transition-all duration-200 ${showBreakdown ? "rotate-180 text-primary" : "text-muted-foreground/40 group-hover/row:text-muted-foreground"}`} />
         </div>
       </div>
-      {showBreakdown && (
-        <div className="px-3 pb-2">
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showBreakdown ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="px-3 pb-3 pt-1">
           <ScoreBreakdownPanel breakdown={signal.breakdown} />
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -327,9 +299,6 @@ export function ResearchDossierView({
                 signal={r}
                 isSelected={i === 0 && !pinnedSignalSummary}
                 isPinned={pinnedSignalSummary === r.summary}
-                onPin={() => setPinnedSignalSummary(
-                  pinnedSignalSummary === r.summary ? null : r.summary
-                )}
               />
             ))
           ) : (
