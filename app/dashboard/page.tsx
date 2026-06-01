@@ -27,7 +27,9 @@ export default function DashboardPage() {
       const res = await fetch("/api/runs?limit=100");
       if (res.ok) {
         const data = await res.json();
-        setRuns(data.runs || []);
+        const fetched: RunRecord[] = data.runs || [];
+        setRuns(fetched);
+        try { sessionStorage.setItem("omen_runs_cache", JSON.stringify(fetched)); } catch { /* quota */ }
       }
     } finally {
       setIsLoading(false);

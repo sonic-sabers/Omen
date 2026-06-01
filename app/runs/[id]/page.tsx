@@ -1,39 +1,69 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ResearchDossierView } from "@/components/ResearchDossier";
-import { getRun } from "@/lib/store";
-import { ArrowLeft } from "lucide-react";
+import type { RunRecord } from "@/lib/types";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ id: string }> }
-): Promise<Metadata> {
-  const { id } = await params;
-  const run = getRun(id);
-  if (!run) return { title: "Run Not Found" };
+const RUNS_CACHE_KEY = "omen_runs_cache";
 
-  const name = run.dossier.prospect.name;
-  const company = run.dossier.prospect.company;
-  const title = `${name} · ${company}`;
-
-  return {
-    title,
-    description: `Research dossier for ${name}, ${run.dossier.prospect.title ?? ""} at ${company}.`.replace(/,\s*,/, ",").trim(),
-    openGraph: {
-      title: `${title} | Omen`,
-      description: `Research dossier for ${name} at ${company}.`,
-    },
-    robots: {
-      index: false,
-      follow: false,
-    },
-  };
+function getCachedRun(id: string): RunRecord | null {
+  try {
+    const raw = sessionStorage.getItem(RUNS_CACHE_KEY);
+    if (!raw) return null;
+    const runs: RunRecord[] = JSON.parse(raw);
+    return runs.find((r) => r.id === id) ?? null;
+  } catch { return null; }
 }
 
-export default async function RunDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const run = getRun(id);
-  if (!run) return notFound();
+export default function RunDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [run, setRun] = useState<RunRecord | null>(null);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    // Try cache first
+    const cached = getCachedRun(id);
+    if (cached) { setRun(cached); return; }
+
+    // Fall back to API
+    fetch(`/api/runs/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.run) setRun(data.run);
+        else setNotFound(true);
+      })
+      .catch(() => setNotFound(true));
+  }, [id]);
+
+  if (notFound) {
+    return (
+      <main className="min-h-screen bg-[linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.3))]">
+        <div className="mx-auto max-w-3xl px-6 py-8">
+          <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+            <p className="text-sm font-semibold">Run not found</p>
+            <p className="text-xs text-muted-foreground">This run may have expired or the server restarted.</p>
+            <Link href="/dashboard" className="mt-2 text-xs text-primary underline-offset-2 hover:underline">
+              Back to dashboard
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!run) {
+    return (
+      <main className="min-h-screen bg-[linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.3))]">
+        <div className="flex h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading run...
+        </div>
+      </main>
+    );
+  }
 
   const tierStyles =
     run.confidenceTier === "HIGH"   ? "border-emerald-200 bg-emerald-50 text-emerald-700" :
@@ -43,8 +73,6 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
   return (
     <main className="min-h-screen bg-[linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.3))]">
       <div className="mx-auto max-w-3xl px-6 py-8">
-
-        {/* Header */}
         <div className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
           <div className="flex items-center justify-between gap-4 px-5 py-4">
@@ -74,10 +102,8 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
 
-        {/* Dossier */}
         <ResearchDossierView dossier={run.dossier} />
       </div>
     </main>
   );
 }
-
