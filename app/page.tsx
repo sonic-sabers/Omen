@@ -27,7 +27,7 @@ export default function HomePage() {
     saved?.salesContext ?? DEFAULT_SALES_CONTEXT,
   );
 
-  const { events, running, startRun } = useRunPipeline(mode, fixtureId, prospect, salesContext);
+  const { events, running, startRun } = useRunPipeline(mode, fixtureId, prospect, salesContext, saved?.events ?? []);
 
   usePageSession({ mode, fixtureId, prospect, salesContext, events });
 

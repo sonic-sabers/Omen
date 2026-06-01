@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { DashboardTable } from "@/components/DashboardTable";
 import { BatchUpload } from "@/components/BatchUpload";
 import type { RunRecord } from "@/lib/types";
@@ -18,7 +18,6 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const [runs, setRuns] = useState<RunRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,8 +34,7 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Auto-load on mount
-  useState(() => { loadRuns(); });
+  useEffect(() => { loadRuns(); }, [loadRuns]);
 
   const drafted = runs.filter((r) => r.draftProduced).length;
   const skipRate = runs.length ? Math.round(((runs.length - drafted) / runs.length) * 100) : 0;
@@ -56,13 +54,13 @@ export default function DashboardPage() {
         <div className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
           <div className="flex items-center gap-3 px-5 py-4">
-            <button
-              onClick={() => router.back()}
+            <Link
+              href="/"
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
             >
               <ArrowLeft className="h-3 w-3" />
               Back
-            </button>
+            </Link>
             <div className="h-4 w-px bg-border" />
             <div>
               <h1 className="text-sm font-bold tracking-tight">Run Dashboard</h1>

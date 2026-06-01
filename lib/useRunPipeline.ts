@@ -16,8 +16,9 @@ export function useRunPipeline(
   fixtureId: string,
   prospect: Prospect,
   salesContext: SalesContext,
+  initialEvents: PipelineEvent[] = [],
 ) {
-  const [events, setEvents] = useState<PipelineEvent[]>([]);
+  const [events, setEvents] = useState<PipelineEvent[]>(initialEvents);
   const [running, setRunning] = useState(false);
 
   const startRun = useCallback(async () => {
