@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { RunRecord } from "@/lib/types";
-import { RefreshCw, FileText } from "lucide-react";
+import { RefreshCw, FileText, Mail, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardTableProps {
@@ -71,6 +71,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
               <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Grounding</th>
               <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Time</th>
               <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Date</th>
+              <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Draft</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
@@ -107,6 +108,16 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {new Date(run.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/runs/${run.id}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium text-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                  >
+                    <Mail className="h-3 w-3" />
+                    View draft
+                    <ExternalLink className="h-2.5 w-2.5 opacity-50" />
+                  </Link>
                 </td>
               </tr>
             ))}
