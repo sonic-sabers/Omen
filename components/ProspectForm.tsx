@@ -1,5 +1,6 @@
 import type { Prospect } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -36,6 +37,50 @@ interface ProspectFormProps {
   onRun: () => void;
 }
 
+// ── Self-check guardrails ────────────────────────────────────────────────────
+
+const COMMON_NAMES = new Set(["john smith","jane smith","michael smith","david smith","chris","alex","jordan","taylor","morgan","casey","jamie"]);
+
+function selfCheck(prospect: Prospect, mode: "fixture" | "live"): {
+  errors: string[];
+  warnings: string[];
+  hints: string[];
+} {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const hints: string[] = [];
+
+  if (mode === "live") {
+    const name = prospect.name.trim();
+    const company = prospect.company.trim();
+
+    if (!name) errors.push("Name is required.");
+    else if (name.split(" ").length < 2) errors.push("Enter a full name (first + last).");
+
+    if (!company) errors.push("Company is required.");
+
+    if (name && COMMON_NAMES.has(name.toLowerCase())) {
+      warnings.push("Common name detected — add a LinkedIn URL to avoid wrong-person results.");
+    }
+
+    if (!prospect.title && !prospect.linkedinUrl) {
+      hints.push("Add a job title or LinkedIn URL to improve match accuracy.");
+    }
+
+    if (prospect.linkedinUrl && !prospect.linkedinUrl.includes("linkedin.com")) {
+      warnings.push("LinkedIn URL doesn't look right — should contain linkedin.com.");
+    }
+
+    if (prospect.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prospect.email)) {
+      warnings.push("Email address format looks invalid.");
+    }
+  }
+
+  return { errors, warnings, hints };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function ProspectForm(props: ProspectFormProps) {
   const {
     mode,
@@ -47,6 +92,9 @@ export function ProspectForm(props: ProspectFormProps) {
     onProspectChange,
     onRun,
   } = props;
+
+  const { errors, warnings, hints } = selfCheck(prospect, mode);
+  const canRun = errors.length === 0;
 
   return (
     <Card className="border-primary/20 shadow-sm">
@@ -170,13 +218,46 @@ export function ProspectForm(props: ProspectFormProps) {
           />
         </div>
 
+        {/* ── Guardrail feedback ── */}
+        {!running && (errors.length > 0 || warnings.length > 0 || hints.length > 0) && (
+          <div className="space-y-1">
+            {errors.map((e, i) => (
+              <div key={i} className="flex items-start gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-[11px] text-red-700">
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                {e}
+              </div>
+            ))}
+            {warnings.map((w, i) => (
+              <div key={i} className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">
+                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                {w}
+              </div>
+            ))}
+            {hints.map((h, i) => (
+              <div key={i} className="flex items-start gap-1.5 rounded-md bg-muted/60 px-2 py-1.5 text-[11px] text-muted-foreground">
+                <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                {h}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="sticky bottom-3 z-10 mt-4 rounded-lg border bg-background/95 p-2 shadow-md backdrop-blur">
-          <div className="mb-1.5 text-[10px] text-muted-foreground">
-            {running ? "Researching... this takes about 30 seconds" : "All set? Hit the button!"}
+          <div className="mb-1.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+            {running ? (
+              "Researching… this takes about 30 seconds"
+            ) : canRun ? (
+              <>
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                All set — ready to run
+              </>
+            ) : (
+              "Fix the issues above first"
+            )}
           </div>
           <Button
             onClick={onRun}
-            disabled={running}
+            disabled={running || !canRun}
             className="h-9 w-full text-sm font-semibold"
           >
             {running ? "Researching..." : "Research & Write Message"}

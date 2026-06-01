@@ -8,6 +8,38 @@ import { StatusTimeline } from "@/components/StatusTimeline";
 import { ResearchDossierView } from "@/components/ResearchDossier";
 import { SalesContextForm } from "@/components/SalesContextForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, Clock } from "lucide-react";
+
+function DossierFallback({ events }: { events: PipelineEvent[] }) {
+  const errorEvent = [...events].reverse().find((e): e is Extract<PipelineEvent, { type: "error" }> => e.type === "error");
+  const isTimeout = errorEvent?.message?.includes("Timed out") || errorEvent?.message?.includes("60 seconds");
+  const isNoSignal = errorEvent?.message?.includes("Gate 2") || errorEvent?.message?.includes("Gate 3") || errorEvent?.message?.includes("No signal");
+  const isIdentity = errorEvent?.message?.includes("Gate 1") || errorEvent?.message?.includes("identity");
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isTimeout ? "bg-amber-100" : "bg-red-50"}`}>
+        {isTimeout
+          ? <Clock className="h-5 w-5 text-amber-600" />
+          : <AlertTriangle className="h-5 w-5 text-red-400" />}
+      </div>
+      <div>
+        <p className="text-sm font-medium">
+          {isTimeout ? "Research timed out" : isIdentity ? "Could not verify identity" : isNoSignal ? "No usable signal found" : "Something went wrong"}
+        </p>
+        <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+          {isTimeout
+            ? "The search took longer than 60 seconds. Try again — searches can vary in speed."
+            : isIdentity
+            ? "Add a LinkedIn URL, job title, or company name to help confirm the right person."
+            : isNoSignal
+            ? "No recent public signals found for this person. Try a different prospect or check the spelling."
+            : errorEvent?.message ?? "An unexpected error occurred. Please try again."}
+        </p>
+      </div>
+    </div>
+  );
+}
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
@@ -35,19 +67,28 @@ export default function HomePage() {
     setEvents([]);
 
     const sessionId = getSessionId();
+    const abortCtrl = new AbortController();
+    // Client-side 60s hard timeout
+    const timeoutId = setTimeout(() => abortCtrl.abort("timeout"), 60_000);
+
     let response: Response;
     try {
       response = await fetch("/api/run", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-session-id": sessionId,
-        },
+        headers: { "Content-Type": "application/json", "x-session-id": sessionId },
         body: JSON.stringify({ mode, fixtureId, prospect, salesContext }),
+        signal: abortCtrl.signal,
       });
-    } catch {
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const isTimeout = abortCtrl.signal.aborted;
       setEvents([
-        { type: "error", message: "Network error while starting run." },
+        {
+          type: "error",
+          message: isTimeout
+            ? "Timed out after 60 seconds. The research took too long — try again or simplify the prospect details."
+            : "Network error. Check your connection and try again.",
+        },
         { type: "done" },
       ]);
       setRunning(false);
@@ -55,14 +96,14 @@ export default function HomePage() {
     }
 
     if (!response.ok || !response.body) {
-      ``;
+      clearTimeout(timeoutId);
       let message = "Failed to start run.";
       try {
         const data = (await response.json()) as { error?: string };
         if (data?.error) message = data.error;
-      } catch {
-        // ignore non-json error body
-      }
+      } catch { /* ignore */ }
+      if (response.status === 429) message = "Too many requests — wait a moment and try again.";
+      if (response.status === 503) message = "Service temporarily unavailable. Try again in a few seconds.";
       setEvents([{ type: "error", message }, { type: "done" }]);
       setRunning(false);
       return;
@@ -86,20 +127,29 @@ export default function HomePage() {
           try {
             const event = JSON.parse(line.slice(6)) as PipelineEvent;
             setEvents((prev) => [...prev, event]);
-            if (event.type === "done") setRunning(false);
-          } catch {
-            // ignore malformed SSE lines
-          }
+            if (event.type === "done") {
+              clearTimeout(timeoutId);
+              setRunning(false);
+            }
+          } catch { /* ignore malformed SSE */ }
         }
       }
-    } catch {
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const isTimeout = abortCtrl.signal.aborted;
       setEvents((prev) => [
         ...prev,
-        { type: "error", message: "Stream interrupted before completion." },
+        {
+          type: "error",
+          message: isTimeout
+            ? "Timed out after 60 seconds. Partial results shown above."
+            : "Stream interrupted. Partial results shown above.",
+        },
         { type: "done" },
       ]);
     }
 
+    clearTimeout(timeoutId);
     setRunning(false);
   }
 
@@ -197,28 +247,23 @@ export default function HomePage() {
               <CardContent>
                 {dossier ? (
                   <ResearchDossierView dossier={dossier} running={running} />
+                ) : hasError && !running ? (
+                  <DossierFallback events={events} />
+                ) : running ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-sm text-muted-foreground">Researching…</p>
+                    <p className="text-xs text-muted-foreground/60">Usually takes 20–45 seconds</p>
+                  </div>
                 ) : (
-                  <div className="rounded-md border border-dashed bg-muted/20 p-8 text-center">
-                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                      <svg
-                        className="h-5 w-5 text-muted-foreground"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                        />
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+                    <div className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                      <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                     </div>
                     <p className="text-sm font-medium">Ready to research</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Configure prospect details and run the pipeline to
-                      generate an evidence-backed outreach dossier.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Fill in the person's details and hit the button.</p>
                   </div>
                 )}
               </CardContent>
