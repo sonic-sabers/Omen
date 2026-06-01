@@ -59,7 +59,7 @@ function ScoreChip({ score, small }: { score: number; small?: boolean }) {
         {score}/30
       </span>
       <span className="pointer-events-none absolute top-full right-0 z-[9999] mt-1.5 w-44 rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
-        Relevance score — higher is better (max 30)
+        Relevance score, higher is better (max 30)
         <span className="absolute bottom-full right-3 border-4 border-transparent border-b-gray-900" />
       </span>
     </span>
@@ -67,7 +67,7 @@ function ScoreChip({ score, small }: { score: number; small?: boolean }) {
 }
 
 /**
- * InterDeepResearch: "Transparency in reasoning" — show the rubric breakdown
+ * InterDeepResearch: "Transparency in reasoning" - show the rubric breakdown
  * so the user understands WHY this signal was scored the way it was.
  */
 function ScoreBreakdownPanel({ breakdown }: { breakdown: ScoreBreakdown }) {
@@ -143,7 +143,7 @@ function Section({
 }
 
 /**
- * InterDeepResearch: "Steering mechanism" — user can pin a different signal
+ * InterDeepResearch: "Steering mechanism" - user can pin a different signal
  * as the preferred one, overriding the agent's selection.
  */
 function RankedSignalRow({
@@ -244,7 +244,7 @@ export function ResearchDossierView({
         {pinnedSignalSummary && (
           <div className="mb-2 flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2 py-1 text-[10px] text-primary">
             <Pin className="h-2.5 w-2.5" />
-            You overrode the agent — using your pinned signal
+            You overrode the agent. Using your pinned signal
             <button onClick={() => setPinnedSignalSummary(null)} className="ml-auto underline hover:no-underline">
               Reset
             </button>
@@ -276,7 +276,7 @@ export function ResearchDossierView({
         )}
         {displaySignal?.grade === "C" && (
           <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
-            Company-level signal — verify before sending.
+            Company-level signal. Verify before sending.
           </div>
         )}
       </Section>
@@ -350,7 +350,7 @@ export function ResearchDossierView({
       )}
 
       {/* ── 6. Evidence with source provenance ── */}
-      <Section icon={<ExternalLink className="h-3.5 w-3.5" />} title={`Evidence — ${citations.length} sources`} collapsible defaultOpen={false}>
+      <Section icon={<ExternalLink className="h-3.5 w-3.5" />} title={`Evidence: ${citations.length} sources`} collapsible defaultOpen={false}>
         <p className="mb-2 text-[10px] text-muted-foreground">
           All sources used to identify and verify the selected signal.
         </p>

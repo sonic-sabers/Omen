@@ -207,7 +207,7 @@ export function BatchUpload({ onBatchComplete }: BatchUploadProps) {
       </CardHeader>
 
       <CardContent className="space-y-0 p-0">
-        {/* Per-job list — scrollable */}
+        {/* Per-job list, scrollable */}
         <div className="max-h-48 overflow-y-auto divide-y divide-border/50 px-4 pb-2">
           {jobs.map((job) => (
             <div key={job.id} className="flex items-center gap-2 py-1.5">

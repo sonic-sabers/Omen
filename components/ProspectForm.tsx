@@ -60,7 +60,7 @@ function selfCheck(prospect: Prospect, mode: "fixture" | "live"): {
     if (!company) errors.push("Company is required.");
 
     if (name && COMMON_NAMES.has(name.toLowerCase())) {
-      warnings.push("Common name detected — add a LinkedIn URL to avoid wrong-person results.");
+      warnings.push("Common name detected. Add a LinkedIn URL to avoid wrong-person results.");
     }
 
     if (!prospect.title && !prospect.linkedinUrl) {
@@ -68,7 +68,7 @@ function selfCheck(prospect: Prospect, mode: "fixture" | "live"): {
     }
 
     if (prospect.linkedinUrl && !prospect.linkedinUrl.includes("linkedin.com")) {
-      warnings.push("LinkedIn URL doesn't look right — should contain linkedin.com.");
+      warnings.push("LinkedIn URL doesn't look right. Should contain linkedin.com.");
     }
 
     if (prospect.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(prospect.email)) {
@@ -101,7 +101,7 @@ export function ProspectForm(props: ProspectFormProps) {
       <CardHeader>
         <CardTitle>Who do you want to reach?</CardTitle>
         <CardDescription>
-          Enter the person's details below and hit Run — Omen will research them and write a message for you.
+          Enter the person's details below and hit Run. Omen will research them and write a message for you.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -124,7 +124,7 @@ export function ProspectForm(props: ProspectFormProps) {
           </Select>
           <p className="text-[10px] text-muted-foreground">
             {mode === "fixture"
-              ? "Uses pre-loaded sample data. Results are the same every time — good for testing."
+              ? "Uses pre-loaded sample data. Results are the same every time, good for testing."
               : "Searches the web for real info about this person. Results may differ each run."}
           </p>
         </div>
@@ -249,7 +249,7 @@ export function ProspectForm(props: ProspectFormProps) {
             ) : canRun ? (
               <>
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                All set — ready to run
+                All set, ready to run
               </>
             ) : (
               "Fix the issues above first"
