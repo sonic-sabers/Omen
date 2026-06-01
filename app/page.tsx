@@ -124,12 +124,12 @@ export default function HomePage() {
           <section className="space-y-6">
             <Card className="border-primary/20 shadow-sm">
               <CardHeader>
-                <CardTitle>Dossier</CardTitle>
-                {!dossier ? (
-                  <p className="text-sm text-muted-foreground">
-                    No dossier yet.
-                  </p>
-                ) : null}
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle>Dossier</CardTitle>
+                </div>
+                {!dossier && !running && !hasError && (
+                  <p className="text-xs text-muted-foreground">Results appear here after you run.</p>
+                )}
                 <StatusTimeline events={stageEvents} running={running} />
               </CardHeader>
               <CardContent>

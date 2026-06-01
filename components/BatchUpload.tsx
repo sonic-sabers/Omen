@@ -126,8 +126,11 @@ export function BatchUpload({ onBatchComplete }: BatchUploadProps) {
   const stopBatch = useCallback(() => {
     abortedRef.current = true;
     setIsUploading(false);
-    setJobs((prev) => prev.map((j) => j.status === "pending" || j.status === "running"
-      ? { ...j, status: "error", result: { error: "Stopped by user" } } : j));
+    setJobs((prev) => prev.map((j) => {
+      if (j.status === "running") return { ...j, status: "error", result: { error: "Cancelled mid-run" } };
+      if (j.status === "pending") return { ...j, status: "error", result: { error: "Skipped" } };
+      return j;
+    }));
   }, []);
 
   const downloadResults = useCallback(() => {
@@ -209,26 +212,39 @@ export function BatchUpload({ onBatchComplete }: BatchUploadProps) {
       <CardContent className="space-y-0 p-0">
         {/* Per-job list, scrollable */}
         <div className="max-h-48 overflow-y-auto divide-y divide-border/50 px-4 pb-2">
-          {jobs.map((job) => (
-            <div key={job.id} className="flex items-center gap-2 py-1.5">
-              {job.status === "complete" && <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />}
-              {job.status === "error"    && <XCircle className="h-3 w-3 shrink-0 text-red-400" />}
-              {job.status === "running"  && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />}
-              {job.status === "pending"  && <Clock className="h-3 w-3 shrink-0 text-muted-foreground/40" />}
-              <div className="flex-1 min-w-0">
-                <div className="truncate text-[11px] font-medium">{job.name}</div>
-                <div className="truncate text-[10px] text-muted-foreground">{job.company}{job.title ? ` · ${job.title}` : ""}</div>
+          {jobs.map((job) => {
+            const isSkipped = job.status === "error" && job.result?.error === "Skipped";
+            const isCancelled = job.status === "error" && job.result?.error === "Cancelled mid-run";
+            const isRealError = job.status === "error" && !isSkipped && !isCancelled;
+            return (
+              <div key={job.id} className={`flex items-center gap-2 py-1.5 ${isSkipped ? "opacity-40" : ""}`}>
+                {job.status === "complete" && <CheckCircle2 className="h-3 w-3 shrink-0 text-green-500" />}
+                {isRealError    && <XCircle className="h-3 w-3 shrink-0 text-red-400" />}
+                {isCancelled    && <XCircle className="h-3 w-3 shrink-0 text-amber-400" />}
+                {isSkipped      && <Clock className="h-3 w-3 shrink-0 text-muted-foreground/40" />}
+                {job.status === "running"  && <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />}
+                {job.status === "pending"  && <Clock className="h-3 w-3 shrink-0 text-muted-foreground/40" />}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-[11px] font-medium">{job.name}</div>
+                  <div className="truncate text-[10px] text-muted-foreground">{job.company}{job.title ? ` · ${job.title}` : ""}</div>
+                </div>
+                {job.status === "complete" && job.result?.confidenceTier && (
+                  <span className="shrink-0 text-[9px] font-semibold uppercase text-muted-foreground">{job.result.confidenceTier}</span>
+                )}
+                {isCancelled && (
+                  <span className="shrink-0 text-[9px] text-amber-500">Cancelled</span>
+                )}
+                {isSkipped && (
+                  <span className="shrink-0 text-[9px] text-muted-foreground/50">Skipped</span>
+                )}
+                {isRealError && job.result?.error && (
+                  <span className="shrink-0 text-[9px] text-red-400 truncate max-w-[80px]" title={job.result.error}>
+                    {job.result.error.slice(0, 30)}
+                  </span>
+                )}
               </div>
-              {job.status === "complete" && job.result?.confidenceTier && (
-                <span className="shrink-0 text-[9px] font-medium uppercase text-muted-foreground">{job.result.confidenceTier}</span>
-              )}
-              {job.status === "error" && job.result?.error && (
-                <span className="shrink-0 text-[9px] text-red-400 truncate max-w-[80px]" title={job.result.error}>
-                  {job.result.error.slice(0, 30)}
-                </span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer actions */}

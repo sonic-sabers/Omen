@@ -53,36 +53,38 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-6xl px-6 py-8">
 
         {/* ── Header ── */}
-        <div className="mb-8 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
-          <div className="flex items-center justify-between gap-4 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.back()}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-              >
-                <ArrowLeft className="h-3 w-3" />
-                Back
-              </button>
-              <div className="h-4 w-px bg-border" />
-              <div>
-                <h1 className="text-sm font-bold tracking-tight">Run Dashboard</h1>
-                <p className="text-[11px] text-muted-foreground/70">All research runs and batch results</p>
-              </div>
+          <div className="flex items-center gap-3 px-5 py-4">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Back
+            </button>
+            <div className="h-4 w-px bg-border" />
+            <div>
+              <h1 className="text-sm font-bold tracking-tight">Run Dashboard</h1>
+              <p className="text-[11px] text-muted-foreground/70">All research runs and batch results</p>
             </div>
-            <BatchUpload onBatchComplete={loadRuns} />
           </div>
         </div>
 
-        {/* ── Stats row (only when runs exist) ── */}
-        {runs.length > 0 && (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Total runs" value={runs.length} />
-            <StatCard label="Drafts produced" value={drafted} sub={`${100 - skipRate}% draft rate`} />
-            <StatCard label="Avg duration" value={`${(avgDuration / 1000).toFixed(1)}s`} />
-            <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "—"} sub="citation fidelity" />
+        {/* ── Stats + Upload row ── */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start">
+          {runs.length > 0 && (
+            <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard label="Total runs" value={runs.length} />
+              <StatCard label="Drafts produced" value={drafted} sub={`${100 - skipRate}% draft rate`} />
+              <StatCard label="Avg duration" value={`${(avgDuration / 1000).toFixed(1)}s`} />
+              <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "—"} sub="citation fidelity" />
+            </div>
+          )}
+          <div className="shrink-0">
+            <BatchUpload onBatchComplete={loadRuns} />
           </div>
-        )}
+        </div>
 
         {/* ── Table ── */}
         {isLoading ? (

@@ -32,10 +32,11 @@ export function DraftCard({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
+    <div className={`rounded-xl border bg-card p-3 ${draft ? "border-primary/30 shadow-sm shadow-primary/5" : "border-border"}`}>
       <div className="mb-2.5 flex items-center gap-1.5">
-        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+        <Mail className={`h-3.5 w-3.5 ${draft ? "text-primary" : "text-muted-foreground"}`} />
         <span className="text-xs font-semibold tracking-tight">Draft</span>
+        {draft && <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-700">Ready</span>}
       </div>
 
       {draft ? (
