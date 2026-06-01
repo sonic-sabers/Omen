@@ -100,8 +100,8 @@ export const RATE_LIMITS = {
 
   batch: {
     windowMs: 60_000,
-    maxRequests: 5,
-    blockDurationMs: 120_000,
+    maxRequests: 60,
+    blockDurationMs: 30_000,
   } satisfies RateLimitConfig,
 
   runs: {
