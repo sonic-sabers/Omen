@@ -26,7 +26,7 @@ export function usePageSession(state: SessionState) {
   const persist = useCallback(() => {
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ mode, fixtureId, prospect, salesContext, events }));
-    } catch { /* quota exceeded — ignore */ }
+    } catch { /* quota exceeded, ignore */ }
   }, [mode, fixtureId, prospect, salesContext, events]);
 
   useEffect(() => { persist(); }, [persist]);

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Omen — Sales Intelligence",
+    default: "Omen: Sales Intelligence",
     template: "%s | Omen",
   },
   description: "Evidence-first B2B outreach research. Research any prospect and get a personalised, grounded message in seconds.",
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Omen",
-    title: "Omen — Sales Intelligence",
+    title: "Omen: Sales Intelligence",
     description: "Evidence-first B2B outreach research. Research any prospect and get a personalised, grounded message in seconds.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Omen — Sales Intelligence",
+    title: "Omen: Sales Intelligence",
     description: "Evidence-first B2B outreach research. Research any prospect and get a personalised, grounded message in seconds.",
   },
   robots: {

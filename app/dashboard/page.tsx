@@ -76,7 +76,7 @@ export default function DashboardPage() {
             <StatCard label="Total runs" value={runs.length} />
             <StatCard label="Drafts produced" value={drafted} sub={`${100 - skipRate}% draft rate`} />
             <StatCard label="Avg duration" value={`${(avgDuration / 1000).toFixed(1)}s`} />
-            <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "—"} sub="citation fidelity" />
+            <StatCard label="Avg grounding" value={avgGrounding > 0 ? `${avgGrounding}%` : "N/A"} sub="citation fidelity" />
           </div>
         )}
 

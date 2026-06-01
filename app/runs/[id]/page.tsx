@@ -42,7 +42,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.08),_transparent_45%),linear-gradient(to_bottom,_hsl(var(--background)),_hsl(var(--muted)/0.32))]">
       <div className="mx-auto max-w-7xl p-4 md:p-8">
 
-        {/* Header — matches main page exactly */}
+        {/* Header */}
         <header className="mb-6 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
           <div className="h-[2px] w-full bg-gradient-to-r from-primary/60 via-primary to-primary/20" />
           <div className="flex items-center justify-between gap-4 px-5 py-4">
@@ -96,7 +96,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
           </div>
         ) : (
           <div className="grid gap-x-6 gap-y-3 lg:grid-cols-[420px_1fr]">
-            {/* Left col — prospect info */}
+            {/* Left col: prospect info */}
             <div className="space-y-4">
               <Card className="border-primary/20 shadow-sm">
                 <CardHeader>
@@ -136,7 +136,7 @@ export default function RunDetailPage({ params }: { params: Promise<{ id: string
               </Card>
             </div>
 
-            {/* Right col — dossier */}
+            {/* Right col: dossier */}
             <Card className="border-primary/20 shadow-sm">
               <CardHeader>
                 <CardTitle>Dossier</CardTitle>

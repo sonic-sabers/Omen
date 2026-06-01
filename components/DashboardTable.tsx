@@ -226,7 +226,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                     {run.dossier?.prospect?.name ?? <span className="italic text-muted-foreground opacity-50">Unknown</span>}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    {run.dossier?.prospect?.company ?? <span className="opacity-40">—</span>}
+                    {run.dossier?.prospect?.company ?? <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3">
                     <TierBadge tier={run.confidenceTier ?? "SKIP"} />
@@ -237,18 +237,18 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {run.metrics ? `${run.metrics.hookSpecificityRate}%` : <span className="opacity-40">—</span>}
+                    {run.metrics ? `${run.metrics.hookSpecificityRate}%` : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {run.metrics ? `${run.metrics.groundingFidelity}%` : <span className="opacity-40">—</span>}
+                    {run.metrics ? `${run.metrics.groundingFidelity}%` : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {typeof run.durationMs === "number" ? `${(run.durationMs / 1000).toFixed(1)}s` : <span className="opacity-40">—</span>}
+                    {typeof run.durationMs === "number" ? `${(run.durationMs / 1000).toFixed(1)}s` : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {run.createdAt
                       ? new Date(run.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
-                      : <span className="opacity-40">—</span>}
+                      : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <button
@@ -272,7 +272,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
           </table>
         </div>
 
-        {/* Pagination — only show when needed */}
+        {/* Pagination: only show when needed */}
         {totalPages > 1 && (
           <Pagination
             page={safePage}
