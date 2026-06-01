@@ -1,6 +1,6 @@
 # Omen: Smart Sales Research
 
-**Live:** [omen-gray-seven.vercel.app/dashboard](https://omen-gray-seven.vercel.app/dashboard)
+**Live:** [Checkout Omen](https://omen-gray-seven.vercel.app/)
 
 **Omen** is an AI-powered B2B sales intelligence tool that researches a prospect online, scores the best outreach signal, and generates a ready-to-send personalised message: all in one pipeline run.
 
