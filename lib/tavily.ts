@@ -11,7 +11,7 @@ interface TavilyResponse {
   }>;
 }
 
-export async function searchTavily(query: string, signal: AbortSignal): Promise<RawSource[]> {
+export async function searchTavily(query: string, signal: AbortSignal, includeDomains?: string[]): Promise<RawSource[]> {
   const { tavilyApiKey } = readEnv();
   if (!tavilyApiKey) {
     return [];
@@ -30,6 +30,7 @@ export async function searchTavily(query: string, signal: AbortSignal): Promise<
         query,
         max_results: TAVILY_CONFIG.maxResultsPerQuery,
         search_depth: TAVILY_CONFIG.searchDepth,
+        ...(includeDomains?.length ? { include_domains: includeDomains } : {}),
       }),
       signal: controller.signal,
     });

@@ -27,45 +27,105 @@ function truncateSources(sources: RawSource[]): RawSource[] {
  */
 function buildSearchQueries(
   prospect: RunInput["prospect"],
-): { query: string; category: string }[] {
-  const base = `${prospect.name} ${prospect.company}`.trim();
+): { query: string; category: string; domains?: string[] }[] {
   const title = prospect.title ?? "";
+  const name = prospect.name;
+  const company = prospect.company;
 
   return [
-    // News and press releases
-    { query: `${base} ${title} news press release announcement site:businesswire.com OR site:prnewswire.com OR site:techcrunch.com`, category: "news" },
+    // News — person-anchored, pinned to high-quality press outlets
+    {
+      query: `"${name}" "${company}" news announcement`,
+      category: "news",
+      domains: ["techcrunch.com", "forbes.com", "businesswire.com", "prnewswire.com", "venturebeat.com", "inc.com", "wired.com", "bloomberg.com", "reuters.com", "wsj.com", "ft.com"],
+    },
 
     // Funding
-    { query: `${base} funding investment series raised valuation`, category: "funding" },
-    { query: `${prospect.company} funding round investors raised series`, category: "funding" },
+    {
+      query: `"${name}" "${company}" funding raised series investment`,
+      category: "funding",
+      domains: ["crunchbase.com", "techcrunch.com", "pitchbook.com", "axios.com", "bloomberg.com", "businessinsider.com"],
+    },
+    {
+      query: `"${company}" funding round raised`,
+      category: "funding",
+      domains: ["crunchbase.com", "pitchbook.com", "techcrunch.com", "venturebeat.com"],
+    },
 
-    // M&A and partnerships
-    { query: `${base} acquisition merger partnership deal`, category: "m&a" },
+    // M&A
+    {
+      query: `"${name}" "${company}" acquisition merger partnership deal`,
+      category: "m&a",
+      domains: ["reuters.com", "bloomberg.com", "wsj.com", "techcrunch.com", "businesswire.com"],
+    },
 
     // Executive movements
-    { query: `${base} ${title} appointed hired joined promoted`, category: "executive" },
-    { query: `${prospect.company} leadership team changes executive hire`, category: "executive" },
+    {
+      query: `"${name}" ${title} appointed hired joined promoted`,
+      category: "executive",
+      domains: ["linkedin.com", "businesswire.com", "prnewswire.com", "globenewswire.com", "accesswire.com"],
+    },
 
-    // Podcasts and media
-    { query: `${base} podcast interview guest speaker keynote conference panel`, category: "media" },
+    // Podcasts & media appearances
+    {
+      query: `"${name}" podcast interview speaker`,
+      category: "media",
+      domains: ["spotify.com", "podcasts.apple.com", "youtube.com", "podchaser.com", "listennotes.com", "buzzsprout.com", "simplecast.com"],
+    },
+    {
+      query: `"${name}" "${company}" interview keynote panel`,
+      category: "media",
+      domains: ["youtube.com", "techcrunch.com", "forbes.com", "inc.com", "wired.com", "saastr.com", "ycombinator.com"],
+    },
 
-    // Company hiring signals
-    { query: `${prospect.company} hiring "account executive" OR "sales" OR "revenue" jobs site:lever.co OR site:greenhouse.io`, category: "hiring" },
+    // Hiring signals
+    {
+      query: `"${company}" hiring jobs open roles`,
+      category: "hiring",
+      domains: ["lever.co", "greenhouse.io", "ashbyhq.com", "workable.com", "jobs.weekday.works", "wellfound.com", "linkedin.com"],
+    },
 
-    // Product and growth
-    { query: `${prospect.company} product launch release new feature customer win growth`, category: "product" },
+    // Product & growth
+    {
+      query: `"${company}" product launch feature announcement`,
+      category: "product",
+      domains: ["producthunt.com", "techcrunch.com", "venturebeat.com", "businesswire.com", "prnewswire.com", "g2.com", "capterra.com"],
+    },
 
-    // Social signals
-    { query: `${prospect.name} twitter OR "x.com" opinion thought leadership reddit "hacker news"`, category: "social" },
+    // Social & thought leadership
+    {
+      query: `"${name}" "${company}"`,
+      category: "social",
+      domains: ["twitter.com", "x.com", "threads.net", "news.ycombinator.com", "reddit.com"],
+    },
 
-    // Financial and regulatory
-    { query: `${prospect.company} revenue earnings analyst report`, category: "financial" },
+    // Financial / analyst
+    {
+      query: `"${company}" revenue growth earnings`,
+      category: "financial",
+      domains: ["bloomberg.com", "wsj.com", "ft.com", "reuters.com", "seekingalpha.com", "fool.com"],
+    },
 
-    // Awards and recognition
-    { query: `${base} award recognition "forbes" OR "inc 500" OR "fast company"`, category: "awards" },
+    // Awards & recognition
+    {
+      query: `"${name}" award recognition list`,
+      category: "awards",
+      domains: ["forbes.com", "inc.com", "fastcompany.com", "fortune.com", "businessinsider.com"],
+    },
 
-    // Profile aggregators (open web only)
-    { query: `${prospect.name} ${prospect.company} crunchbase profile background career history`, category: "profile" },
+    // Profile aggregators
+    {
+      query: `"${name}" "${company}" profile career background`,
+      category: "profile",
+      domains: ["crunchbase.com", "wellfound.com", "rocketreach.co", "apollo.io", "zoominfo.com", "clearbit.com", "clay.com"],
+    },
+
+    // Weekday & job intelligence
+    {
+      query: `"${company}" hiring team growth`,
+      category: "hiring",
+      domains: ["weekday.works", "jobs.weekday.works", "getpocket.com", "builtin.com", "builtinsf.com", "builtinnyc.com", "builtinboston.com", "builtinchicago.com", "builtinla.com", "builtinseattle.com", "builtinaustin.com", "builtincolorado.com"],
+    },
   ];
 }
 
@@ -87,8 +147,8 @@ export async function researchSignals(
 
   // Parallel search across all categories
   const batches = await Promise.all(
-    queries.map(async ({ query, category }) => {
-      const results = await searchTavily(query, signal);
+    queries.map(async ({ query, category, domains }) => {
+      const results = await searchTavily(query, signal, domains);
       return results.map((r) => ({ ...r, sourceCategory: category }));
     }),
   );

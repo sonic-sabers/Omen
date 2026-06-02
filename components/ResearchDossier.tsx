@@ -194,7 +194,7 @@ export function ResearchDossierView({
   const [showSelectedBreakdown, setShowSelectedBreakdown] = useState(false);
 
   const allSources = getAllSources(dossier);
-  const citations = allSources.length >= 10 ? allSources : [...allSources, ...allSources].slice(0, 10);
+  const citations = allSources;
 
   const linkedinUrl = dossier.prospect?.linkedinUrl;
   const email = dossier.prospect?.email;
