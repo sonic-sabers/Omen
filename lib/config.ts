@@ -105,3 +105,10 @@ export const RESOLVE_CONFIG = {
   ]),
   minNameParts: 2,
 } as const;
+
+// ─── Review / Quality Control Config ──────────────────────────────────────────
+
+export const REVIEW_CONFIG = {
+  maxRetries: 5,
+  maxTokens: 400,
+} as const;

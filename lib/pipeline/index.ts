@@ -8,6 +8,7 @@ import {
   calculateConfidenceVerdict,
 } from "@/lib/pipeline/judge";
 import { buildDraft } from "@/lib/pipeline/draft";
+import { reviewDraft } from "@/lib/pipeline/review";
 
 export async function* runPipeline(
   input: RunInput,
@@ -177,20 +178,37 @@ export async function* runPipeline(
   );
 
   // Gate 3: Balanced strictness - only draft for HIGH/MEDIUM
-  let draft = undefined;
+  let rawDraft = undefined;
   if (confidenceTier === "HIGH" || confidenceTier === "MEDIUM") {
-    draft = await buildDraft(judged.selectedSignal, salesContext, input.mode, resolved);
+    rawDraft = await buildDraft(judged.selectedSignal, salesContext, input.mode, resolved);
   }
 
   yield {
     type: "stage",
     stage: "draft",
     status: "complete",
-    note: draft
+    note: rawDraft
       ? `Draft generated. Confidence: ${confidenceTier}`
       : confidenceTier === "SKIP"
         ? `Gate 3 SKIP: Confidence too low (${confidenceTier})`
         : "No draft generated",
+  };
+
+  // Stage 6: Review (self-improving loop, max 5 retries)
+  yield { type: "stage", stage: "review", status: "running" };
+  let draft = rawDraft;
+  if (rawDraft && judged.selectedSignal) {
+    draft = await reviewDraft(rawDraft, judged.selectedSignal, resolved, salesContext, input.mode);
+  }
+  yield {
+    type: "stage",
+    stage: "review",
+    status: draft && draft.reviewPassed === false ? "error" : "complete",
+    note: draft
+      ? draft.reviewPassed === false
+        ? `Draft did not pass review after ${draft.reviewAttempts ?? 0} attempt(s) — best effort used`
+        : `Draft passed review in ${draft.reviewAttempts ?? 0} attempt(s)`
+      : "No draft to review",
   };
 
   const dossier: ResearchDossier = {

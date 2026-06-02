@@ -49,4 +49,9 @@ export const DraftResponseSchema = z.object({
   linkedinBody: z.string().min(1),
 });
 
+export const ReviewResponseSchema = z.object({
+  pass: z.boolean(),
+  issues: z.array(z.string().min(1)),
+});
+
 export type RunInputParsed = z.infer<typeof RunInputSchema>;

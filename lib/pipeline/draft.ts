@@ -29,11 +29,22 @@ function sanitizeDraft(text: string): string {
     .trim();
 }
 
+function sanitizeSummary(summary: string): string {
+  return summary
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\b[A-Za-z]+ \d{4}\s*[-–—]\s*([A-Za-z]+ \d{4}|Present)\b/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, 120);
+}
+
 export async function buildDraft(
   signal: SelectedSignal | undefined,
   salesContext: SalesContext,
   mode: "fixture" | "live",
   prospect?: Pick<Prospect, "name" | "company" | "title">,
+  reviewIssues?: string[],
 ): Promise<DraftOutput | undefined> {
   if (!signal) return undefined;
 
@@ -74,6 +85,9 @@ export async function buildDraft(
       `PROSPECT: ${JSON.stringify({ name: prospect?.name, company: prospect?.company, title: prospect?.title })}`,
       `SIGNAL: ${JSON.stringify(signal)}`,
       `SALES_CONTEXT: ${JSON.stringify(salesContext)}`,
+      ...(reviewIssues?.length
+        ? ["", "REVISION REQUIRED. Fix ALL of the following issues from the previous attempt:", ...reviewIssues.map(i => `- ${i}`)]
+        : []),
     ].join("\n");
     const llm = await askAnthropicJson<unknown>(prompt);
     const parsed = DraftResponseSchema.safeParse(llm);
@@ -94,8 +108,9 @@ export async function buildDraft(
   }
 
   const mentionable = signal.safety === "mentionable";
+  const sanitized = sanitizeSummary(signal.summary);
   const signalLine = mentionable
-    ? signal.summary
+    ? sanitized
     : "your team is navigating a period of change";
   const relevanceLine = signal.relevanceReason
     ? signal.relevanceReason
@@ -110,11 +125,11 @@ export async function buildDraft(
   ].join("\n\n");
 
   const linkedin = mentionable
-    ? `Noticed ${signal.summary.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
+    ? `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
     : `Saw some interesting momentum at your team. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
 
-  const subject = mentionable && signal.summary.length < 55
-    ? signal.summary
+  const subject = mentionable && sanitized.length < 55
+    ? sanitized
     : "A thought on your outreach timing";
 
   return {

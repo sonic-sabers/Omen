@@ -19,7 +19,7 @@ export interface Prospect {
   location?: string;
 }
 
-export type StageName = "resolve" | "research" | "extract" | "judge" | "draft";
+export type StageName = "resolve" | "research" | "extract" | "judge" | "draft" | "review";
 
 export interface StageUpdateEvent {
   type: "stage";
@@ -60,6 +60,8 @@ export interface DraftOutput {
   emailBody: string;
   linkedinBody: string;
   warning?: string;
+  reviewAttempts?: number;
+  reviewPassed?: boolean;
 }
 
 export interface ResearchDossier {

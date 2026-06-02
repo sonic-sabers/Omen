@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { StageUpdateEvent } from "@/lib/types";
 import { Check, Loader2, AlertCircle, Circle, ChevronDown } from "lucide-react";
 
-const stageOrder = ["resolve", "research", "extract", "judge", "draft"] as const;
+const stageOrder = ["resolve", "research", "extract", "judge", "draft", "review"] as const;
 
 const stageDescriptions: Record<string, { label: string; description: string }> = {
   resolve:  { label: "Verify",    description: "Confirming person–company match" },
@@ -12,6 +12,7 @@ const stageDescriptions: Record<string, { label: string; description: string }> 
   extract:  { label: "Extract",   description: "Identifying outreach signals" },
   judge:    { label: "Score",     description: "Ranking signals by relevance" },
   draft:    { label: "Draft",     description: "Generating personalized messaging" },
+  review:   { label: "Review",    description: "Quality-checking the draft" },
 };
 
 export function StatusTimeline({ events, running }: { events: StageUpdateEvent[]; running: boolean }) {
