@@ -117,7 +117,7 @@ export async function* runPipeline(
 
   // Stage 3: Extract (R6 - structured signal extraction)
   yield { type: "stage", stage: "extract", status: "running" };
-  const candidates = await extractCandidates(sources, input.mode);
+  const candidates = await extractCandidates(sources, input.mode, resolved);
 
   // Drop noise: filter out candidates with wrong person, stale, or irrelevant
   const validCandidates = candidates.filter((c) => {
@@ -179,7 +179,7 @@ export async function* runPipeline(
   // Gate 3: Balanced strictness - only draft for HIGH/MEDIUM
   let draft = undefined;
   if (confidenceTier === "HIGH" || confidenceTier === "MEDIUM") {
-    draft = await buildDraft(judged.selectedSignal, salesContext, input.mode);
+    draft = await buildDraft(judged.selectedSignal, salesContext, input.mode, resolved);
   }
 
   yield {

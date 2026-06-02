@@ -1,6 +1,6 @@
 import { askAnthropicJson } from "@/lib/anthropic";
 import { DraftResponseSchema } from "@/lib/schemas";
-import type { DraftOutput, SalesContext, SelectedSignal } from "@/lib/types";
+import type { DraftOutput, Prospect, SalesContext, SelectedSignal } from "@/lib/types";
 
 const EM_DASH_RE = /\s*—\s*/g;
 const EN_DASH_RE = /\s*–\s*/g;
@@ -33,10 +33,12 @@ export async function buildDraft(
   signal: SelectedSignal | undefined,
   salesContext: SalesContext,
   mode: "fixture" | "live",
+  prospect?: Pick<Prospect, "name" | "company" | "title">,
 ): Promise<DraftOutput | undefined> {
   if (!signal) return undefined;
 
   if (mode === "live") {
+    const firstName = prospect?.name?.split(" ")[0] ?? "there";
     const prompt = [
       "Write short, human outreach copy. Return strict JSON only.",
       'Format: {"emailSubject":"...","emailBody":"...","linkedinBody":"..."}',
@@ -46,11 +48,13 @@ export async function buildDraft(
       "- Short sentences. No filler. No buzzwords.",
       "- Never use em dashes (—) or en dashes (–). Use commas or full stops instead.",
       "- No exclamation marks.",
+      `- Address the recipient by their first name: ${firstName}.`,
       "- Do not start the email with 'I'. Start with the recipient's context.",
       "- Do not use: synergy, leverage, scalable, ecosystem, paradigm, circle back, deep dive, bandwidth, touch base, move the needle, game-changer, cutting-edge, best-in-class, world-class, revolutionary, disruptive.",
       "",
       "CONTENT RULES:",
       "- Ground every claim in the SIGNAL below. Do not invent facts.",
+      "- Reference the prospect's company and role naturally where relevant.",
       "- Do not comment on the person's appearance, age, gender, ethnicity, religion, politics, or personal life.",
       "- Do not make assumptions about the person beyond what the signal states.",
       "- No pressure tactics, urgency manipulation, or guilt-tripping.",
@@ -67,6 +71,7 @@ export async function buildDraft(
       "- Email body: 3 paragraphs, 150-220 words total. Do NOT write fewer than 150 words.",
       "- LinkedIn message: 2-3 sentences, under 400 characters.",
       "",
+      `PROSPECT: ${JSON.stringify({ name: prospect?.name, company: prospect?.company, title: prospect?.title })}`,
       `SIGNAL: ${JSON.stringify(signal)}`,
       `SALES_CONTEXT: ${JSON.stringify(salesContext)}`,
     ].join("\n");
@@ -95,9 +100,10 @@ export async function buildDraft(
   const relevanceLine = signal.relevanceReason
     ? signal.relevanceReason
     : `That kind of shift often means teams are rethinking how they find and engage the right buyers.`;
+  const firstName = prospect?.name?.split(" ")[0] ?? "there";
 
   const body = [
-    `Hi there,`,
+    `Hi ${firstName},`,
     `Reached out because ${signalLine}. ${relevanceLine}`,
     `We help teams like yours with ${salesContext.offering.toLowerCase()}. The idea is to ground outreach in real, timely signals so your messages reach people at the right moment, not just on a generic cadence.`,
     `Would it make sense to connect for 15 minutes to see if there is a fit?`,
