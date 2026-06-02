@@ -2,15 +2,22 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ANTHROPIC_CONFIG } from "@/lib/config";
 import { readEnv } from "@/lib/env";
 
-export async function askAnthropicJson<T>(prompt: string): Promise<T | null> {
+let _client: Anthropic | null = null;
+
+function getClient(): Anthropic | null {
   const env = readEnv();
   if (!env.anthropicApiKey) return null;
+  if (!_client) _client = new Anthropic({ apiKey: env.anthropicApiKey });
+  return _client;
+}
 
-  const client = new Anthropic({ apiKey: env.anthropicApiKey });
+export async function askAnthropicJson<T>(prompt: string): Promise<T | null> {
+  const client = getClient();
+  if (!client) return null;
 
   try {
     const message = await client.messages.create({
-      model: env.anthropicModel,
+      model: readEnv().anthropicModel,
       max_tokens: ANTHROPIC_CONFIG.maxTokens,
       temperature: ANTHROPIC_CONFIG.temperature,
       system: ANTHROPIC_CONFIG.systemPrompt,

@@ -24,7 +24,7 @@ export const SOURCE_BUDGETS = {
   maxSourcesPerRun: 40,
   maxSourceCharsForLLM: 24000,
   maxRunDurationMs: 58_000,
-  tavilyTimeoutMs: 12_000,
+  tavilyTimeoutMs: 6_000,
 } as const;
 
 // ─── Tavily Search Config ─────────────────────────────────────────────────────

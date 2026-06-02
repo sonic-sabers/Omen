@@ -1,6 +1,4 @@
-import { askAnthropicJson } from "@/lib/anthropic";
 import { RANKING_CONFIG } from "@/lib/config";
-import { JudgeResponseSchema } from "@/lib/schemas";
 import type {
   Prospect,
   RankedSignal,
@@ -253,7 +251,6 @@ function scoreCandidate(
 export async function judgeCandidates(
   candidates: SignalCandidate[],
   prospect: Prospect,
-  mode: "fixture" | "live",
 ): Promise<JudgeResult> {
   if (candidates.length === 0) {
     return {
@@ -289,28 +286,11 @@ export async function judgeCandidates(
       breakdown: item.breakdown,
     }));
 
-  let selectedRank = rankedSignals.find(
+  const selectedRank = rankedSignals.find(
     (r) =>
       r.safety !== "disqualifying" &&
       r.score >= RANKING_CONFIG.thresholds.selectMinScore,
   );
-
-  if (mode === "live") {
-    const prompt = [
-      "Choose best candidate index considering safety and persona relevance.",
-      'Return: {"selectedIndex":0,"safety":"mentionable|usable_but_do_not_mention|disqualifying","relevanceReason":"...","personaFitReason":"..."}',
-      `PROSPECT: ${JSON.stringify(prospect)}`,
-      `CANDIDATES: ${JSON.stringify(candidates)}`,
-    ].join("\n");
-    const judged = await askAnthropicJson<unknown>(prompt);
-    const parsed = JudgeResponseSchema.safeParse(judged);
-    if (parsed.success && parsed.data.selectedIndex < rankedSignals.length) {
-      const r = rankedSignals.find(
-        (x) => x.summary === candidates[parsed.data.selectedIndex]?.summary,
-      );
-      if (r && parsed.data.safety !== "disqualifying") selectedRank = r;
-    }
-  }
 
   for (const r of rankedSignals) {
     if (r !== selectedRank) {

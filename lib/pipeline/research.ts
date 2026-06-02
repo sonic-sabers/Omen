@@ -33,12 +33,11 @@ function buildSearchQueries(
 
   return [
     // News and press releases
-    { query: `${base} ${title} news press release announcement`, category: "news" },
-    { query: `${base} ${title} site:businesswire.com OR site:prnewswire.com`, category: "news" },
+    { query: `${base} ${title} news press release announcement site:businesswire.com OR site:prnewswire.com OR site:techcrunch.com`, category: "news" },
 
     // Funding
-    { query: `${base} funding investment series raised`, category: "funding" },
-    { query: `${prospect.company} valuation funding round investors`, category: "funding" },
+    { query: `${base} funding investment series raised valuation`, category: "funding" },
+    { query: `${prospect.company} funding round investors raised series`, category: "funding" },
 
     // M&A and partnerships
     { query: `${base} acquisition merger partnership deal`, category: "m&a" },
@@ -48,23 +47,16 @@ function buildSearchQueries(
     { query: `${prospect.company} leadership team changes executive hire`, category: "executive" },
 
     // Podcasts and media
-    { query: `${base} podcast interview guest speaker`, category: "media" },
-    { query: `${base} site:youtube.com OR site:spotify.com OR site:apple.com/podcasts`, category: "media" },
-
-    // Conferences and events
-    { query: `${base} conference keynote webinar panel presentation`, category: "conference" },
+    { query: `${base} podcast interview guest speaker keynote conference panel`, category: "media" },
 
     // Company hiring signals
-    { query: `${prospect.company} hiring "account executive" OR "sales" OR "revenue" jobs`, category: "hiring" },
-    { query: `${prospect.company} site:linkedin.com/jobs OR site:lever.co OR site:greenhouse.io`, category: "hiring" },
+    { query: `${prospect.company} hiring "account executive" OR "sales" OR "revenue" jobs site:lever.co OR site:greenhouse.io`, category: "hiring" },
 
     // Product and growth
-    { query: `${prospect.company} product launch release new feature`, category: "product" },
-    { query: `${prospect.company} customer win case study growth`, category: "product" },
+    { query: `${prospect.company} product launch release new feature customer win growth`, category: "product" },
 
-    // Social signals (Twitter/X, Reddit)
-    { query: `${prospect.name} twitter OR "x.com" opinion thought leadership`, category: "social" },
-    { query: `${prospect.company} reddit OR "hacker news" OR ycombinator discussion`, category: "social" },
+    // Social signals
+    { query: `${prospect.name} twitter OR "x.com" opinion thought leadership reddit "hacker news"`, category: "social" },
 
     // Financial and regulatory
     { query: `${prospect.company} revenue earnings analyst report`, category: "financial" },
@@ -72,16 +64,8 @@ function buildSearchQueries(
     // Awards and recognition
     { query: `${base} award recognition "forbes" OR "inc 500" OR "fast company"`, category: "awards" },
 
-    // Executive profile aggregators (LinkedIn blocks crawlers directly)
-    { query: `${prospect.name} ${prospect.company} crunchbase profile biography`, category: "profile" },
-    { query: `${prospect.name} ${prospect.company} background career history quotes`, category: "profile" },
-
-    // LinkedIn via aggregators that re-publish profile data
-    { query: `${prospect.name} ${prospect.company} linkedin summary experience`, category: "linkedin" },
-    { query: `"${prospect.name}" "${prospect.company}" site:rocketreach.co OR site:apollo.io OR site:zoominfo.com`, category: "linkedin" },
-    { query: `"${prospect.name}" linkedin ${title} ${prospect.company} OR site:signalhire.com OR site:contactout.com`, category: "linkedin" },
-    { query: `${prospect.name} ${prospect.company} previous role career path promoted`, category: "linkedin" },
-    { query: `${prospect.name} ${prospect.company} "connected with" OR "works at" OR "currently at" linkedin`, category: "linkedin" },
+    // Profile aggregators (open web only)
+    { query: `${prospect.name} ${prospect.company} crunchbase profile background career history`, category: "profile" },
   ];
 }
 

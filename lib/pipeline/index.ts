@@ -155,7 +155,7 @@ export async function* runPipeline(
 
   // Stage 4: Judge (R7 - scoring with safety veto)
   yield { type: "stage", stage: "judge", status: "running" };
-  const judged = await judgeCandidates(validCandidates, resolved, input.mode);
+  const judged = await judgeCandidates(validCandidates, resolved);
   yield {
     type: "stage",
     stage: "judge",
