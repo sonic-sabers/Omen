@@ -15,13 +15,15 @@ function LiIcon({ className }: { className?: string }) {
 export function DraftCard({
   draft,
   running = false,
+  prospectEmail,
 }: {
   draft?: DraftOutput;
   running?: boolean;
+  prospectEmail?: string;
 }) {
-  const [copied, setCopied] = useState<"" | "subject" | "body" | "linkedin">("");
+  const [copied, setCopied] = useState<"" | "to" | "subject" | "body" | "linkedin">("");
 
-  async function copy(text: string, key: "subject" | "body" | "linkedin") {
+  async function copy(text: string, key: "to" | "subject" | "body" | "linkedin") {
     try {
       await navigator.clipboard.writeText(text);
       setCopied(key);
@@ -41,6 +43,16 @@ export function DraftCard({
 
       {draft ? (
         <div className="space-y-2">
+          {/* To */}
+          {prospectEmail && (
+            <div className="rounded-lg border border-border bg-muted/30 p-2.5">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">To</span>
+                <CopyButton onClick={() => copy(prospectEmail, "to")} copied={copied === "to"} disabled={running} />
+              </div>
+              <p className="font-mono text-xs">{prospectEmail}</p>
+            </div>
+          )}
           {/* Subject */}
           <div className="rounded-lg border border-border bg-muted/30 p-2.5">
             <div className="mb-1 flex items-center justify-between">

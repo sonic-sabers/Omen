@@ -245,7 +245,7 @@ export function ProspectForm(props: ProspectFormProps) {
         <div className="sticky bottom-3 z-10 mt-4 rounded-lg border bg-background/95 p-2 shadow-md backdrop-blur">
           <div className="mb-1.5 flex items-center gap-1 text-[10px] text-muted-foreground">
             {running ? (
-              "Researching… this takes about 30 seconds"
+              "Researching… sit tight"
             ) : canRun ? (
               <>
                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />

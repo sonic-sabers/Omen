@@ -14,6 +14,7 @@ export const ProspectSchema = z.object({
   name: z.string().min(1),
   company: z.string().min(1),
   title: z.string().optional(),
+  email: z.string().email().optional(),
   linkedinUrl: z.string().url().optional(),
   location: z.string().optional(),
 });

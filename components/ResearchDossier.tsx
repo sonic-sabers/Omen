@@ -283,7 +283,7 @@ export function ResearchDossierView({
 
       {/* ── 2. Draft ── */}
       <div id="draft-section">
-        <DraftCard draft={dossier.draft} running={running} />
+        <DraftCard draft={dossier.draft} running={running} prospectEmail={dossier.prospect?.email} />
       </div>
 
       <div className="border-t border-dashed border-border/60" />

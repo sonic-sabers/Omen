@@ -58,6 +58,7 @@ function RunDrawer({ run, onClose }: { run: RunRecord; onClose: () => void }) {
             <p className="mt-0.5 text-[11px] text-muted-foreground/60">
               {new Date(run.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}
               {" · "}{(run.durationMs / 1000).toFixed(1)}s
+              {run.dossier.prospect.email && <>{" · "}<span className="font-mono">{run.dossier.prospect.email}</span></>}
             </p>
           </div>
           <button
@@ -206,6 +207,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
               <tr className="border-b border-border bg-muted/30">
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Prospect</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Company</th>
+                <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Email</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Tier</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Hook</th>
                 <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Specificity</th>
@@ -227,6 +229,11 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {run.dossier?.prospect?.company ?? <span className="opacity-40">-</span>}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {run.dossier?.prospect?.email
+                      ? <span className="font-mono text-[11px]">{run.dossier.prospect.email}</span>
+                      : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3">
                     <TierBadge tier={run.confidenceTier ?? "SKIP"} />
@@ -265,7 +272,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
               {/* Fill empty rows to keep table height stable */}
               {pageRuns.length < PAGE_SIZE && runs.length > PAGE_SIZE && Array.from({ length: PAGE_SIZE - pageRuns.length }).map((_, i) => (
                 <tr key={`empty-${i}`}>
-                  <td colSpan={9} className="px-4 py-3" />
+                  <td colSpan={10} className="px-4 py-3" />
                 </tr>
               ))}
             </tbody>

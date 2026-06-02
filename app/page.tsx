@@ -138,10 +138,16 @@ export default function HomePage() {
                 ) : hasError && !running ? (
                   <DossierFallback events={events} />
                 ) : running ? (
-                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <p className="text-sm text-muted-foreground">Researching…</p>
-                    <p className="text-xs text-muted-foreground/60">Usually takes 20–45 seconds</p>
+                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                    <div className="relative flex h-10 w-10 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+                      <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-primary" />
+                      <div className="h-2 w-2 rounded-full bg-primary/60 animate-pulse" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Building your dossier</p>
+                      <p className="text-xs text-muted-foreground/60">Scanning signals across the web</p>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
