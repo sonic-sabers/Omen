@@ -210,9 +210,9 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Hook</th>
                 <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Specificity</th>
                 <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Grounding</th>
-                <th className="px-4 py-2.5 text-right font-semibold text-muted-foreground">Time</th>
+                <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Time</th>
                 <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Date</th>
-                <th className="px-4 py-2.5 text-left font-semibold text-muted-foreground">Draft</th>
+                <th className="px-4 py-2.5 text-center font-semibold text-muted-foreground">Draft</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -242,7 +242,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                     {run.metrics ? `${run.metrics.groundingFidelity}%` : <span className="opacity-40">-</span>}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
                     {typeof run.durationMs === "number" ? `${(run.durationMs / 1000).toFixed(1)}s` : <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -250,7 +250,7 @@ export function DashboardTable({ runs, onRefresh }: DashboardTableProps) {
                       ? new Date(run.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
                       : <span className="opacity-40">-</span>}
                   </td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => setSelectedRun(run)}
                       className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium text-foreground shadow-sm transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
