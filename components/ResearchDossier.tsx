@@ -115,13 +115,14 @@ function ScoreBreakdownPanel({ breakdown }: { breakdown: ScoreBreakdown }) {
 }
 
 function Section({
-  icon, title, accent, collapsible, defaultOpen = true, children,
+  icon, title, accent, collapsible, defaultOpen = true, badge, children,
 }: {
   icon: React.ReactNode;
   title: string;
   accent?: boolean;
   collapsible?: boolean;
   defaultOpen?: boolean;
+  badge?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -134,6 +135,7 @@ function Section({
       >
         <span className={accent ? "text-primary" : "text-muted-foreground"}>{icon}</span>
         <span className="flex-1 text-xs font-semibold tracking-tight">{title}</span>
+        {badge}
         {collapsible && (
           <ChevronDown className={`h-3 w-3 text-muted-foreground/50 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         )}
@@ -242,7 +244,21 @@ export function ResearchDossierView({
       )}
 
       {/* ── 1. Selected Signal ── */}
-      <Section icon={<TrendingUp className="h-3.5 w-3.5" />} title="Selected Signal" accent>
+      <Section
+        icon={<TrendingUp className="h-3.5 w-3.5" />}
+        title="Selected Signal"
+        accent
+        badge={
+          dossier.riskFlags.length > 0 ? (
+            <div className="group relative ml-auto">
+              <AlertTriangle className="h-3.5 w-3.5 cursor-pointer text-amber-500" />
+              <div className="pointer-events-none absolute right-0 top-5 z-10 hidden w-56 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[10px] text-amber-800 shadow-md group-hover:block">
+                {dossier.riskFlags.map((f, i) => <p key={i}>{f}</p>)}
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
         {pinnedSignalSummary && (
           <div className="mb-2 flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2 py-1 text-[10px] text-primary">
             <Pin className="h-2.5 w-2.5" />
@@ -290,69 +306,7 @@ export function ResearchDossierView({
 
       <div className="border-t border-dashed border-border/60" />
 
-      {/* ── 3. Ranked Signals (with steering pins + breakdowns) ── */}
-      <Section icon={<FileSearch className="h-3.5 w-3.5" />} title="All Ranked Signals" collapsible defaultOpen={false}>
-        <p className="mb-2 text-[10px] text-muted-foreground">
-          Pin any signal to use it instead of the agent's selection.
-        </p>
-        <div className="space-y-1.5">
-          {dossier.rankedSignals.length ? (
-            dossier.rankedSignals.map((r, i) => (
-              <RankedSignalRow
-                key={i}
-                signal={r}
-                isPinned={pinnedSignalSummary === r.summary}
-              />
-            ))
-          ) : (
-            <span className="text-muted-foreground">No signals found</span>
-          )}
-        </div>
-      </Section>
-
-      {/* ── 4. Risk Flags ── */}
-      {dossier.riskFlags.length > 0 && (
-        <Section icon={<AlertTriangle className="h-3.5 w-3.5" />} title="Risk Flags">
-          <ul className="space-y-1">
-            {dossier.riskFlags.map((r, i) => (
-              <li key={i} className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-amber-800">
-                <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                {r}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {/* ── 5. Rejected Alternatives (with provenance: why each was rejected) ── */}
-      {dossier.rejectedAlternatives.length > 0 && (
-        <Section icon={<XCircle className="h-3.5 w-3.5" />} title="Rejected Signals" collapsible defaultOpen={false}>
-          <p className="mb-2 text-[10px] text-muted-foreground">
-            These signals were found but not selected. Reason shown for each.
-          </p>
-          <ul className="space-y-1.5">
-            {dossier.rejectedAlternatives.map((r, i) => {
-              const ranked = dossier.rankedSignals.find((rs) => rs.summary === r.summary);
-              return (
-                <li key={i} className="rounded-lg bg-muted/50 px-2 py-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-foreground leading-snug">{r.summary}</span>
-                    {ranked && <ScoreChip score={ranked.score} small />}
-                  </div>
-                  <p className="mt-0.5 text-muted-foreground">{r.reason}</p>
-                  {ranked && (
-                    <p className="mt-0.5 text-[10px] text-muted-foreground/60 capitalize">
-                      Safety: {ranked.safety.replace(/_/g, " ")}
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </Section>
-      )}
-
-      {/* ── 6. Evidence with source provenance ── */}
+      {/* ── 3. Evidence ── */}
       <Section icon={<ExternalLink className="h-3.5 w-3.5" />} title={`Evidence: ${citations.length} sources`} collapsible defaultOpen={false}>
         <p className="mb-2 text-[10px] text-muted-foreground">
           All sources used to identify and verify the selected signal.
@@ -397,6 +351,50 @@ export function ResearchDossierView({
           })}
         </ul>
       </Section>
+
+      {/* ── 4. All Ranked Signals ── */}
+      <Section icon={<FileSearch className="h-3.5 w-3.5" />} title="All Ranked Signals" collapsible defaultOpen={false}>
+        <p className="mb-2 text-[10px] text-muted-foreground">
+          Pin any signal to use it instead of the agent's selection.
+        </p>
+        <div className="space-y-1.5">
+          {dossier.rankedSignals.length ? (
+            dossier.rankedSignals.map((r, i) => (
+              <RankedSignalRow key={i} signal={r} isPinned={pinnedSignalSummary === r.summary} />
+            ))
+          ) : (
+            <span className="text-muted-foreground">No signals found</span>
+          )}
+        </div>
+      </Section>
+
+      {/* ── 5. Rejected Signals ── */}
+      {dossier.rejectedAlternatives.length > 0 && (
+        <Section icon={<XCircle className="h-3.5 w-3.5" />} title="Rejected Signals" collapsible defaultOpen={false}>
+          <p className="mb-2 text-[10px] text-muted-foreground">
+            Found but not selected. Reason shown for each.
+          </p>
+          <ul className="space-y-1.5">
+            {dossier.rejectedAlternatives.map((r, i) => {
+              const ranked = dossier.rankedSignals.find((rs) => rs.summary === r.summary);
+              return (
+                <li key={i} className="rounded-lg bg-muted/50 px-2 py-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium text-foreground leading-snug">{r.summary}</span>
+                    {ranked && <ScoreChip score={ranked.score} small />}
+                  </div>
+                  <p className="mt-0.5 text-muted-foreground">{r.reason}</p>
+                  {ranked && (
+                    <p className="mt-0.5 text-[10px] text-muted-foreground/60 capitalize">
+                      Safety: {ranked.safety.replace(/_/g, " ")}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Section>
+      )}
     </div>
   );
 }
