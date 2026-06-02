@@ -36,7 +36,7 @@ const FIXTURE_SOURCES: Record<FixtureId, RawSource[]> = {
       sourceName: "Regional News",
       url: "https://example.com/other-jane",
       publishedAt: nowIso(7),
-      snippet: "Jane Smith at a different Acme in UK won an award.",
+      snippet: "Jane Smith at a different Acme in the UK was appointed VP Sales after leading regional growth.",
     },
   ],
   "stale-conflict": [
@@ -50,7 +50,7 @@ const FIXTURE_SOURCES: Record<FixtureId, RawSource[]> = {
       sourceName: "Forum",
       url: "https://example.com/unverified",
       publishedAt: nowIso(1),
-      snippet: "Unverified claim that Acme is pausing product development.",
+      snippet: "Unverified claim that Acme announced a product pause amid internal conflict.",
     },
   ],
   "layoffs-sensitive": [

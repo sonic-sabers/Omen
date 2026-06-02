@@ -63,7 +63,7 @@ describe("buildDraft fallback sanitization", () => {
   it("uses safe fallback emailSubject when sanitized summary is long", async () => {
     const signal = makeSignal("A very long signal summary that definitely exceeds fifty-five characters total");
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
-    expect(draft!.emailSubject).toBe("A thought on your outreach timing");
+    expect(draft!.emailSubject).toBe("Quick thought for your team");
   });
 
   it("does not expose internal ranking metadata in fixture emailBody", async () => {
@@ -84,5 +84,15 @@ describe("buildDraft fallback sanitization", () => {
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
     expect(draft!.emailBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
     expect(draft!.linkedinBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
+  });
+
+  it("punctuates sensitive fallback copy clearly", async () => {
+    const signal = makeSignal("Acme announced a 15% workforce reduction amid restructuring.", {
+      safety: "usable_but_do_not_mention",
+    });
+    const draft = await buildDraft(signal, salesContext, "fixture", prospect);
+    expect(draft!.emailBody).toContain(
+      "Wanted to reach out about something that tends to matter for outbound teams. Keeping messages",
+    );
   });
 });

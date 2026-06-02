@@ -97,6 +97,13 @@ function detectSafety(text: string): SafetyClassification {
   if (text.includes("unverified") || text.includes("rumor"))
     return "disqualifying";
   if (
+    text.includes("different acme") ||
+    text.includes("different company") ||
+    text.includes("wrong person") ||
+    text.includes("namesake")
+  )
+    return "disqualifying";
+  if (
     text.includes("scandal") ||
     text.includes("litigation") ||
     text.includes("fraud")
@@ -294,9 +301,15 @@ export async function judgeCandidates(
 
   for (const r of rankedSignals) {
     if (r !== selectedRank) {
+      const reason =
+        r.safety === "disqualifying"
+          ? `Rejected as unsafe or likely wrong-person/conflicting evidence (rank #${r.rank}, grade ${r.grade}).`
+          : r.score < RANKING_CONFIG.thresholds.selectMinScore
+            ? `Rejected because it scored below the outreach threshold (rank #${r.rank}, grade ${r.grade}).`
+            : `Ranked #${r.rank} with grade ${r.grade}; lower priority.`;
       rejectedAlternatives.push({
         summary: r.summary,
-        reason: `Ranked #${r.rank} with grade ${r.grade}; lower priority.`,
+        reason,
       });
     }
   }

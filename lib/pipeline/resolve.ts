@@ -58,7 +58,7 @@ export function resolveProspect(prospect: Prospect): ResolutionResult {
   // Gate 1: Identity resolution check
   if (isAmbiguous && !normalized.linkedinUrl) {
     warnings.push(
-      "Gate 1: Common-name ambiguity detected. LinkedIn URL recommended for disambiguation.",
+      "Gate 1: Common-name risk detected. LinkedIn URL recommended for disambiguation.",
     );
   }
 

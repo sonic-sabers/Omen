@@ -71,8 +71,9 @@ export async function extractCandidates(
 ): Promise<SignalCandidate[]> {
   if (sources.length === 0) return [];
 
-  // First: filter out noise
-  const validSources = sources.filter((s) => !isNoise(s));
+  // Live mode filters noisy sources before LLM extraction. Fixture mode keeps
+  // them so edge-case demos can show why risky signals were rejected.
+  const validSources = mode === "live" ? sources.filter((s) => !isNoise(s)) : sources;
 
   if (mode === "live") {
     const prospectContext = prospect
@@ -140,6 +141,8 @@ export async function extractCandidates(
     } else if (text.includes("acquisition") || text.includes("acquired") || text.includes("merger")) {
       signalType = "company";
     } else if (text.includes("layoff") || text.includes("workforce reduction")) {
+      signalType = "company";
+    } else if (text.includes("product") || text.includes("conflict")) {
       signalType = "company";
     } else if (text.includes("podcast") || text.includes("interview") || text.includes("speaker") || text.includes("keynote") || text.includes("conference")) {
       signalType = classifySignalType(snippet, source);

@@ -79,11 +79,17 @@ export async function buildDraft(
       "- Do not make assumptions about the person beyond what the signal states.",
       "- No pressure tactics, urgency manipulation, or guilt-tripping.",
       "- No NSFW, offensive, or sensitive personal content.",
-      "- If the signal is about layoffs or workforce reduction: do NOT reference it directly. Use neutral business context only.",
+      ...(signal.safety === "usable_but_do_not_mention"
+        ? [
+            "- CRITICAL: The signal is sensitive (layoffs, workforce reduction, crisis, or similar). Do NOT reference the event, the signal topic, or anything that hints at it. Write as if you are reaching out based on general business context only. No indirect references either.",
+          ]
+        : [
+            "- If the signal is about layoffs or workforce reduction: do NOT reference it directly. Use neutral business context only.",
+          ]),
       "- Never mention internal ranking, score, grade, selected signal, relevance reason, persona fit, or rubric language.",
       "",
       "STRUCTURE:",
-      "- Para 1 (2-3 sentences): If the signal is mentionable, open with the specific event, announcement, or trigger. If the signal is sensitive, open with a neutral business context and do not name the event.",
+      `- Para 1 (2-3 sentences): ${signal.safety === "usable_but_do_not_mention" ? "Signal is sensitive. Open with neutral business context for their role. Do NOT name, hint at, or allude to the signal event in any way." : "Open with the specific event, announcement, or trigger from the signal."}`,
       "- Para 2 (2-3 sentences): Explain what problem or opportunity this creates for them. Connect to SALES_CONTEXT offering concretely.",
       "- Para 3 (1-2 sentences): Soft CTA. No pressure.",
       "",
@@ -121,13 +127,13 @@ export async function buildDraft(
   const sanitized = sanitizeSummary(signal.summary);
   const signalLine = mentionable
     ? sanitized
-    : "I had a thought about your team's outreach timing";
+    : "Wanted to reach out about something that tends to matter for outbound teams.";
   const openerLine = mentionable
     ? `Reached out because ${signalLine}.`
     : signalLine;
   const relevanceLine = mentionable
     ? "That kind of shift often means teams are rethinking how they find and engage the right buyers."
-    : "For outbound teams, it can help to keep messages grounded in timely buying signals without adding noise.";
+    : "Keeping messages grounded in timely buying signals, rather than a generic cadence, tends to make a real difference.";
   const firstName = prospect?.name?.split(" ")[0] ?? "there";
 
   const body = [
@@ -139,11 +145,11 @@ export async function buildDraft(
 
   const linkedin = mentionable
     ? `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
-    : `Had a thought about outreach timing. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
+    : `Had a thought that might be relevant for your team. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
 
   const subject = mentionable && sanitized.length < 55
     ? sanitized
-    : "A thought on your outreach timing";
+    : "Quick thought for your team";
 
   return {
     emailSubject: subject,
