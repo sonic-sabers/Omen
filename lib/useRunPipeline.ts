@@ -27,7 +27,7 @@ export function useRunPipeline(
 
     const sessionId = getSessionId();
     const abortCtrl = new AbortController();
-    const timeoutId = setTimeout(() => abortCtrl.abort("timeout"), 60_000);
+    const timeoutId = setTimeout(() => abortCtrl.abort("timeout"), 120_000);
 
     let response: Response;
     try {
@@ -44,7 +44,7 @@ export function useRunPipeline(
         {
           type: "error",
           message: isTimeout
-            ? "Timed out after 60 seconds. The research took too long. Try again or simplify the prospect details."
+            ? "Timed out after 2 minutes. The research took too long. Try again or simplify the prospect details."
             : "Network error. Check your connection and try again.",
         },
         { type: "done" },
@@ -100,7 +100,7 @@ export function useRunPipeline(
         {
           type: "error",
           message: isTimeout
-            ? "Timed out after 60 seconds. Partial results shown above."
+            ? "Timed out after 2 minutes. Partial results shown above."
             : "Stream interrupted. Partial results shown above.",
         },
         { type: "done" },

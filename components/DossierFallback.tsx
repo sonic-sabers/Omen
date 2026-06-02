@@ -5,7 +5,7 @@ import type { PipelineEvent } from "@/lib/types";
 
 export function DossierFallback({ events }: { events: PipelineEvent[] }) {
   const errorEvent = [...events].reverse().find((e): e is Extract<PipelineEvent, { type: "error" }> => e.type === "error");
-  const isTimeout = errorEvent?.message?.includes("Timed out") || errorEvent?.message?.includes("60 seconds");
+  const isTimeout = errorEvent?.message?.includes("Timed out") || errorEvent?.message?.includes("2 minutes");
   const isNoSignal = errorEvent?.message?.includes("Gate 2") || errorEvent?.message?.includes("Gate 3") || errorEvent?.message?.includes("No signal");
   const isIdentity = errorEvent?.message?.includes("Gate 1") || errorEvent?.message?.includes("identity");
 
@@ -22,7 +22,7 @@ export function DossierFallback({ events }: { events: PipelineEvent[] }) {
         </p>
         <p className="mt-1 max-w-sm text-xs text-muted-foreground">
           {isTimeout
-            ? "The search took longer than 60 seconds. Try again, searches can vary in speed."
+            ? "The search took longer than 2 minutes. Try again, searches can vary in speed."
             : isIdentity
             ? "Add a LinkedIn URL, job title, or company name to help confirm the right person."
             : isNoSignal

@@ -15,6 +15,8 @@ const stageDescriptions: Record<string, { label: string; description: string }> 
   review:   { label: "Review",    description: "Quality-checking the draft" },
 };
 
+type StageStatus = "pending" | "running" | "complete" | "error";
+
 export function StatusTimeline({ events, running }: { events: StageUpdateEvent[]; running: boolean }) {
   const [open, setOpen] = useState(false);
 
@@ -24,12 +26,19 @@ export function StatusTimeline({ events, running }: { events: StageUpdateEvent[]
     return acc;
   }, {});
 
+  const hasError = events.some((e) => e.status === "error");
+
   const statuses = stageOrder.map((stage) => {
     const latest = grouped[stage]?.[grouped[stage].length - 1];
-    return { stage, status: latest?.status ?? "pending", note: latest?.note };
+    let status: StageStatus = latest?.status ?? "pending";
+    // If run ended (not running) and this stage is still "running", it was interrupted
+    if (status === "running" && !running) {
+      status = hasError ? "error" : "complete";
+    }
+    return { stage, status, note: latest?.note };
   });
 
-  const allDone = statuses.every((s) => s.status === "complete" || s.status === "error");
+  const allDone = !running && statuses.some((s) => s.status === "complete" || s.status === "error") && statuses.every((s) => s.status !== "running");
   const activeIdx = statuses.findIndex((s) => s.status === "running");
 
   // Auto-open while running, auto-close when done
@@ -94,23 +103,22 @@ export function StatusTimeline({ events, running }: { events: StageUpdateEvent[]
       <div className={`overflow-hidden transition-all duration-300 ease-in-out ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="border-t border-border px-3 py-2 space-y-1.5">
           {statuses.map((item, idx) => {
-            const done = item.status === "complete" || item.status === "error";
             const active = item.status === "running";
-            const hasError = item.status === "error";
             return (
               <div key={item.stage} className="flex items-start gap-2">
                 <div className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                  done    ? "border-primary bg-primary text-primary-foreground" :
-                  active  ? "border-primary bg-primary/10" :
-                            "border-muted-foreground/25 bg-background"
+                  item.status === "error"    ? "border-destructive bg-destructive text-destructive-foreground" :
+                  item.status === "complete" ? "border-primary bg-primary text-primary-foreground" :
+                  active                     ? "border-primary bg-primary/10" :
+                                               "border-muted-foreground/25 bg-background"
                 }`}>
-                  {done    ? <Check className="h-2.5 w-2.5" /> :
-                   active  ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" /> :
-                   hasError ? <AlertCircle className="h-2.5 w-2.5 text-destructive" /> :
-                              <Circle className="h-1.5 w-1.5 text-muted-foreground/40" />}
+                  {item.status === "error"    ? <AlertCircle className="h-2.5 w-2.5" /> :
+                   item.status === "complete" ? <Check className="h-2.5 w-2.5" /> :
+                   active                     ? <Loader2 className="h-2.5 w-2.5 animate-spin text-primary" /> :
+                                                <Circle className="h-1.5 w-1.5 text-muted-foreground/40" />}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className={`text-xs font-medium leading-tight ${active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground/60"}`}>
+                  <span className={`text-xs font-medium leading-tight ${active ? "text-primary" : item.status === "complete" || item.status === "error" ? "text-foreground" : "text-muted-foreground/60"}`}>
                     {stageDescriptions[item.stage]?.label}
                   </span>
                   <span className="text-[10px] text-muted-foreground/60 leading-tight">
