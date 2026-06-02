@@ -311,7 +311,7 @@ export function ResearchDossierView({
         <p className="mb-2 text-[10px] text-muted-foreground">
           All sources used to identify and verify the selected signal.
         </p>
-        <ul className="space-y-2">
+        <ul className="max-h-96 space-y-2 overflow-y-auto pr-1">
           {citations.map((s, i) => {
             const li = isLinkedIn(s.url);
             const age = sourceAge(s.publishedAt);
