@@ -47,6 +47,31 @@ function buildPublicSignal(signal: SelectedSignal): Pick<SelectedSignal, "summar
   };
 }
 
+function buildSensitiveFixtureDraft(
+  salesContext: SalesContext,
+  prospect?: Pick<Prospect, "name" | "company" | "title">,
+): DraftOutput {
+  const firstName = prospect?.name?.split(" ")[0] ?? "there";
+  const roleContext = prospect?.title
+    ? `${prospect.title} teams`
+    : "outbound teams";
+  const offering = salesContext.offering.toLowerCase();
+
+  return {
+    emailSubject: "Quick thought on outbound timing",
+    emailBody: sanitizeDraft([
+      `Hi ${firstName},`,
+      `For ${roleContext}, timing can be the difference between a useful note and another generic touchpoint.`,
+      `Omen helps teams use ${offering} to spot account changes, review the evidence, and turn only safe context into outreach. That keeps personalization grounded without putting sensitive company news into the message.`,
+      "Would it be worth a quick 15-minute conversation to compare how your team handles signal-based outreach today?",
+    ].join("\n\n")),
+    linkedinBody: sanitizeDraft(
+      `For ${roleContext}, timing matters. Omen helps turn credible, safe account context into cleaner outreach. Worth a quick chat?`,
+    ),
+    warning: "Sensitive signal: do not reference layoffs or crisis directly.",
+  };
+}
+
 export async function buildDraft(
   signal: SelectedSignal | undefined,
   salesContext: SalesContext,
@@ -124,16 +149,14 @@ export async function buildDraft(
   }
 
   const mentionable = signal.safety === "mentionable";
+  if (!mentionable) {
+    return buildSensitiveFixtureDraft(salesContext, prospect);
+  }
+
   const sanitized = sanitizeSummary(signal.summary);
-  const signalLine = mentionable
-    ? sanitized
-    : "Wanted to reach out about something that tends to matter for outbound teams.";
-  const openerLine = mentionable
-    ? `Reached out because ${signalLine}.`
-    : signalLine;
-  const relevanceLine = mentionable
-    ? "That kind of shift often means teams are rethinking how they find and engage the right buyers."
-    : "Keeping messages grounded in timely buying signals, rather than a generic cadence, tends to make a real difference.";
+  const signalLine = sanitized;
+  const openerLine = `Reached out because ${signalLine}.`;
+  const relevanceLine = "That kind of shift often means teams are rethinking how they find and engage the right buyers.";
   const firstName = prospect?.name?.split(" ")[0] ?? "there";
 
   const body = [
@@ -143,11 +166,9 @@ export async function buildDraft(
     `Would it make sense to connect for 15 minutes to see if there is a fit?`,
   ].join("\n\n");
 
-  const linkedin = mentionable
-    ? `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
-    : `Had a thought that might be relevant for your team. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
+  const linkedin = `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`;
 
-  const subject = mentionable && sanitized.length < 55
+  const subject = sanitized.length < 55
     ? sanitized
     : "Quick thought for your team";
 
@@ -155,9 +176,6 @@ export async function buildDraft(
     emailSubject: subject,
     emailBody: sanitizeDraft(body),
     linkedinBody: sanitizeDraft(linkedin),
-    warning:
-      signal.safety === "usable_but_do_not_mention"
-        ? "Sensitive signal: do not reference layoffs or crisis directly."
-        : undefined,
+    warning: undefined,
   };
 }

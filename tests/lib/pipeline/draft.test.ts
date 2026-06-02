@@ -82,17 +82,25 @@ describe("buildDraft fallback sanitization", () => {
       safety: "usable_but_do_not_mention",
     });
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
+    expect(draft!.emailSubject).toBe("Quick thought on outbound timing");
     expect(draft!.emailBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
     expect(draft!.linkedinBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
+    expect(draft!.emailBody).not.toContain("I had a thought about your team's outreach timing");
+    expect(draft!.emailBody).not.toContain("buying signals without adding noise");
+    expect(draft!.emailBody).toContain("only safe context into outreach");
+    expect(draft!.warning).toBe("Sensitive signal: do not reference layoffs or crisis directly.");
   });
 
-  it("punctuates sensitive fallback copy clearly", async () => {
+  it("writes clean sensitive fallback copy", async () => {
     const signal = makeSignal("Acme announced a 15% workforce reduction amid restructuring.", {
       safety: "usable_but_do_not_mention",
     });
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
     expect(draft!.emailBody).toContain(
-      "Wanted to reach out about something that tends to matter for outbound teams. Keeping messages",
+      "For Founding Engineer teams, timing can be the difference between a useful note and another generic touchpoint.",
+    );
+    expect(draft!.emailBody).toContain(
+      "Would it be worth a quick 15-minute conversation to compare how your team handles signal-based outreach today?",
     );
   });
 });

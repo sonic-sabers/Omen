@@ -27,7 +27,7 @@ export default function HomePage() {
     saved?.salesContext ?? DEFAULT_SALES_CONTEXT,
   );
 
-  const { events, running, startRun } = useRunPipeline(mode, fixtureId, prospect, salesContext, saved?.events ?? []);
+  const { events, running, startRun, setEvents } = useRunPipeline(mode, fixtureId, prospect, salesContext, saved?.events ?? []);
 
   usePageSession({ mode, fixtureId, prospect, salesContext, events });
 
@@ -109,8 +109,14 @@ export default function HomePage() {
               fixtureId={fixtureId}
               prospect={prospect}
               running={running}
-              onModeChange={setMode}
-              onFixtureChange={setFixtureId}
+              onModeChange={(nextMode) => {
+                setMode(nextMode);
+                setEvents([]);
+              }}
+              onFixtureChange={(nextFixtureId) => {
+                setFixtureId(nextFixtureId);
+                setEvents([]);
+              }}
               onProspectChange={setProspect}
               onRun={startRun}
             />
@@ -157,7 +163,7 @@ export default function HomePage() {
                       </svg>
                     </div>
                     <p className="text-sm font-medium">Ready to research</p>
-                    <p className="text-xs text-muted-foreground">Fill in the person's details and hit the button.</p>
+                    <p className="text-xs text-muted-foreground">Fill in the person&apos;s details and hit the button.</p>
                   </div>
                 )}
               </CardContent>
