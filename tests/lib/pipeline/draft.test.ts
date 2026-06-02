@@ -63,7 +63,7 @@ describe("buildDraft fallback sanitization", () => {
   it("uses safe fallback emailSubject when sanitized summary is long", async () => {
     const signal = makeSignal("A very long signal summary that definitely exceeds fifty-five characters total");
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
-    expect(draft!.emailSubject).toBe("Quick thought for your team");
+    expect(draft!.emailSubject).toBe("Quick thought on the Cignara opportunity");
   });
 
   it("does not expose internal ranking metadata in fixture emailBody", async () => {
@@ -82,12 +82,12 @@ describe("buildDraft fallback sanitization", () => {
       safety: "usable_but_do_not_mention",
     });
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
-    expect(draft!.emailSubject).toBe("Quick thought on outbound timing");
+    expect(draft!.emailSubject).toBe("A thought on how Cignara approaches outreach");
     expect(draft!.emailBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
     expect(draft!.linkedinBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
     expect(draft!.emailBody).not.toContain("I had a thought about your team's outreach timing");
     expect(draft!.emailBody).not.toContain("buying signals without adding noise");
-    expect(draft!.emailBody).toContain("only safe context into outreach");
+    expect(draft!.emailBody).toContain("account-level changes");
     expect(draft!.warning).toBe("Sensitive signal: do not reference layoffs or crisis directly.");
   });
 
@@ -96,11 +96,7 @@ describe("buildDraft fallback sanitization", () => {
       safety: "usable_but_do_not_mention",
     });
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
-    expect(draft!.emailBody).toContain(
-      "For Founding Engineer teams, timing can be the difference between a useful note and another generic touchpoint.",
-    );
-    expect(draft!.emailBody).toContain(
-      "Would it be worth a quick 15-minute conversation to compare how your team handles signal-based outreach today?",
-    );
+    expect(draft!.emailBody).toContain("account-level changes at Cignara");
+    expect(draft!.emailBody).toContain("Would a 15-minute call this week work?");
   });
 });

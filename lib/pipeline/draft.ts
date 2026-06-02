@@ -57,16 +57,18 @@ function buildSensitiveFixtureDraft(
     : "outbound teams";
   const offering = salesContext.offering.toLowerCase();
 
+  const companyCtx = prospect?.company ? ` at ${prospect.company}` : "";
+
   return {
-    emailSubject: "Quick thought on outbound timing",
+    emailSubject: `A thought on how ${prospect?.company ?? "your team"} approaches outreach`,
     emailBody: sanitizeDraft([
       `Hi ${firstName},`,
-      `For ${roleContext}, timing can be the difference between a useful note and another generic touchpoint.`,
-      `Omen helps teams use ${offering} to spot account changes, review the evidence, and turn only safe context into outreach. That keeps personalization grounded without putting sensitive company news into the message.`,
-      "Would it be worth a quick 15-minute conversation to compare how your team handles signal-based outreach today?",
+      `Reaching out because there are some account-level changes${companyCtx} that look relevant to how your team prioritizes outreach. I won't get into the specifics here, but the short version is it looked like a moment worth flagging.`,
+      `We help ${roleContext} with ${offering}, grounding outreach in real account context so reps spend time on accounts that are actually moving. Given what I'm seeing${companyCtx}, it seemed worth a conversation.`,
+      "Would a 15-minute call this week work?",
     ].join("\n\n")),
     linkedinBody: sanitizeDraft(
-      `For ${roleContext}, timing matters. Omen helps turn credible, safe account context into cleaner outreach. Worth a quick chat?`,
+      `Noticed some movement${companyCtx} that seemed relevant to how your team runs outreach. We help with ${offering}. Worth a quick call?`,
     ),
     warning: "Sensitive signal: do not reference layoffs or crisis directly.",
   };
@@ -154,23 +156,23 @@ export async function buildDraft(
   }
 
   const sanitized = sanitizeSummary(signal.summary);
-  const signalLine = sanitized;
-  const openerLine = `Reached out because ${signalLine}.`;
-  const relevanceLine = "That kind of shift often means teams are rethinking how they find and engage the right buyers.";
   const firstName = prospect?.name?.split(" ")[0] ?? "there";
+  const roleCtx = prospect?.title ? `for someone in your role` : `for your team`;
+  const companyCtx = prospect?.company ? ` at ${prospect.company}` : "";
+  const offering = salesContext.offering.toLowerCase();
 
   const body = [
     `Hi ${firstName},`,
-    `${openerLine} ${relevanceLine}`,
-    `We help teams like yours with ${salesContext.offering.toLowerCase()}. The idea is to ground outreach in real, timely signals so your messages reach people at the right moment, not just on a generic cadence.`,
-    `Would it make sense to connect for 15 minutes to see if there is a fit?`,
+    `Saw that ${sanitized}. That caught my attention${companyCtx} because it often signals a push to grow faster or enter new markets, which puts more pressure on finding and reaching the right buyers quickly.`,
+    `We work with teams on ${offering}. Given what is happening${companyCtx}, it might be worth seeing if there is a fit ${roleCtx}.`,
+    `Open to a 15-minute call this week?`,
   ].join("\n\n");
 
-  const linkedin = `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`;
+  const linkedin = `Saw that ${sanitized.toLowerCase()}. We help with ${offering} and thought the timing might be relevant${companyCtx}. Worth a quick chat?`;
 
   const subject = sanitized.length < 55
     ? sanitized
-    : "Quick thought for your team";
+    : `Quick thought on the ${prospect?.company ?? "next"} opportunity`;
 
   return {
     emailSubject: subject,

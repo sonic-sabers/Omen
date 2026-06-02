@@ -121,12 +121,14 @@ export async function* runPipeline(
   const candidates = await extractCandidates(sources, input.mode, resolved);
 
   // Drop noise: filter out candidates with wrong person, stale, or irrelevant
-  const validCandidates = candidates.filter((c) => {
-    const text = c.summary.toLowerCase();
-    // Drop if clearly wrong person (unverified, rumor)
-    if (text.includes("unverified") || text.includes("rumor")) return false;
-    return true;
-  });
+  const validCandidates = input.mode === "fixture"
+    ? candidates
+    : candidates.filter((c) => {
+        const text = c.summary.toLowerCase();
+        // Drop if clearly wrong person (unverified, rumor)
+        if (text.includes("unverified") || text.includes("rumor")) return false;
+        return true;
+      });
 
   // Track signal types for metrics (person vs company specificity)
   const signalTypes = validCandidates.map((c) => {
