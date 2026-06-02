@@ -289,9 +289,9 @@ export function ResearchDossierView({
             )}
           </div>
         )}
-        {showSelectedBreakdown && selectedBreakdown && (
-          <ScoreBreakdownPanel breakdown={selectedBreakdown} />
-        )}
+        <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showSelectedBreakdown && selectedBreakdown ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0"}`}>
+          {selectedBreakdown && <ScoreBreakdownPanel breakdown={selectedBreakdown} />}
+        </div>
         {displaySignal?.grade === "C" && (
           <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
             Company-level signal. Verify before sending.
