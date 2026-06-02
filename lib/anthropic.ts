@@ -11,14 +11,14 @@ function getClient(): Anthropic | null {
   return _client;
 }
 
-export async function askAnthropicJson<T>(prompt: string, maxTokens?: number): Promise<T | null> {
+async function _askJson<T>(model: string, prompt: string, maxTokens: number): Promise<T | null> {
   const client = getClient();
   if (!client) return null;
 
   try {
     const message = await client.messages.create({
-      model: readEnv().anthropicModel,
-      max_tokens: maxTokens ?? ANTHROPIC_CONFIG.maxTokens,
+      model,
+      max_tokens: maxTokens,
       temperature: ANTHROPIC_CONFIG.temperature,
       system: ANTHROPIC_CONFIG.systemPrompt,
       messages: [{ role: "user", content: prompt }],
@@ -34,4 +34,12 @@ export async function askAnthropicJson<T>(prompt: string, maxTokens?: number): P
   } catch {
     return null;
   }
+}
+
+export async function askAnthropicJson<T>(prompt: string, maxTokens?: number): Promise<T | null> {
+  return _askJson<T>(readEnv().anthropicModel, prompt, maxTokens ?? ANTHROPIC_CONFIG.maxTokens);
+}
+
+export async function askAnthropicJsonFast<T>(prompt: string, maxTokens?: number): Promise<T | null> {
+  return _askJson<T>(ANTHROPIC_CONFIG.fastModel, prompt, maxTokens ?? ANTHROPIC_CONFIG.maxTokens);
 }

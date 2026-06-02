@@ -1,4 +1,4 @@
-import { askAnthropicJson } from "@/lib/anthropic";
+import { askAnthropicJsonFast } from "@/lib/anthropic";
 import { buildDraft } from "@/lib/pipeline/draft";
 import { REVIEW_CONFIG } from "@/lib/config";
 import { ReviewResponseSchema } from "@/lib/schemas";
@@ -28,7 +28,7 @@ async function reviewOnce(
   ].join("\n");
 
   try {
-    const llm = await askAnthropicJson<unknown>(prompt, REVIEW_CONFIG.maxTokens);
+    const llm = await askAnthropicJsonFast<unknown>(prompt, REVIEW_CONFIG.maxTokens);
     const parsed = ReviewResponseSchema.safeParse(llm);
     if (parsed.success) return parsed.data;
   } catch {

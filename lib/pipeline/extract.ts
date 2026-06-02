@@ -1,4 +1,4 @@
-import { askAnthropicJson } from "@/lib/anthropic";
+import { askAnthropicJsonFast } from "@/lib/anthropic";
 import { EXTRACT_CONFIG } from "@/lib/config";
 import { ExtractResponseSchema } from "@/lib/schemas";
 import type { Prospect, RawSource, SignalCandidate } from "@/lib/types";
@@ -96,7 +96,7 @@ export async function extractCandidates(
       "",
       `SOURCES: ${JSON.stringify(validSources)}`,
     ].join("\n");
-    const llm = await askAnthropicJson<unknown>(prompt);
+    const llm = await askAnthropicJsonFast<unknown>(prompt);
     const parsed = ExtractResponseSchema.safeParse(llm);
     if (parsed.success) {
       const out: SignalCandidate[] = [];
