@@ -152,18 +152,18 @@ function RankedSignalRow({
   isPinned,
 }: {
   signal: RankedSignal;
-  isSelected: boolean;
   isPinned: boolean;
 }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   return (
     <div
-      className={`group/row rounded-lg border transition-all cursor-pointer ${isSelected || isPinned ? "border-primary/30 bg-primary/5 shadow-sm" : "border-transparent bg-muted/40 hover:border-border hover:bg-muted/70 hover:shadow-sm"}`}
+      className={`group/row rounded-lg border transition-all cursor-pointer animate-in fade-in slide-in-from-top-1 duration-200 ${isPinned ? "border-primary/30 bg-primary/5 shadow-sm" : "border-transparent bg-muted/40 hover:border-border hover:bg-muted/70 hover:shadow-sm"}`}
+      style={{ animationDelay: `${(signal.rank - 1) * 40}ms`, animationFillMode: "both" }}
       onClick={() => setShowBreakdown((v) => !v)}
     >
       <div className="flex items-center gap-2 px-3 py-1.5">
-        <span className={`text-[10px] font-bold shrink-0 ${isSelected || isPinned ? "text-primary" : "text-muted-foreground"}`}>
+        <span className={`text-[10px] font-bold shrink-0 ${isPinned ? "text-primary" : "text-muted-foreground"}`}>
           #{signal.rank}
         </span>
         <div className="flex-1 min-w-0 leading-snug text-xs">{signal.summary}</div>
@@ -299,7 +299,6 @@ export function ResearchDossierView({
               <RankedSignalRow
                 key={i}
                 signal={r}
-                isSelected={i === 0 && !pinnedSignalSummary}
                 isPinned={pinnedSignalSummary === r.summary}
               />
             ))
