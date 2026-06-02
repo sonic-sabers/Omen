@@ -169,7 +169,20 @@ export async function researchSignals(
     }
   }
 
-  const sources = truncateSources(Array.from(dedup.values()));
+  // Drop sources that don't mention the prospect's name (prevents wrong-person results).
+  // Company-only categories (hiring, product, financial) are exempt — they're company signals.
+  const COMPANY_ONLY_CATEGORIES = new Set(["hiring", "product", "financial"]);
+  const nameLower = input.prospect.name.toLowerCase();
+  // Use last name as minimum bar — first name alone too common
+  const lastName = nameLower.split(" ").at(-1) ?? nameLower;
+  const filtered = Array.from(dedup.values()).filter((s) => {
+    const cat = (s as RawSource & { sourceCategory?: string }).sourceCategory ?? "";
+    if (COMPANY_ONLY_CATEGORIES.has(cat)) return true;
+    const text = `${s.snippet} ${s.sourceName}`.toLowerCase();
+    return text.includes(lastName);
+  });
+
+  const sources = truncateSources(filtered);
 
   // Gate 2: Insufficient signal check
   if (sources.length === 0) {

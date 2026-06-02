@@ -71,6 +71,7 @@ export interface ResearchDossier {
   riskFlags: string[];
   draft?: DraftOutput;
   fallbackNotes: string[];
+  researchSources?: EvidenceSource[];
 }
 
 export interface RunRecord {

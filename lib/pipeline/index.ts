@@ -210,6 +210,7 @@ export async function* runPipeline(
       ...judged.fallbackNotes,
       `Final confidence: ${confidenceTier}`,
     ],
+    researchSources: sources,
   };
 
   yield { type: "dossier", dossier };

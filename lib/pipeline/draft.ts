@@ -57,10 +57,15 @@ export async function buildDraft(
       "- No NSFW, offensive, or sensitive personal content.",
       "- If the signal is about layoffs or workforce reduction: do NOT reference it directly. Acknowledge the company is in a period of change, nothing more.",
       "",
+      "STRUCTURE:",
+      "- Para 1 (2-3 sentences): Open with the specific signal — name the actual event, announcement, or trigger. Make it clear you did real research.",
+      "- Para 2 (2-3 sentences): Explain what problem or opportunity this creates for them. Connect to SALES_CONTEXT offering concretely.",
+      "- Para 3 (1-2 sentences): Soft CTA. No pressure.",
+      "",
       "LENGTH:",
       "- Email subject: under 60 characters, no clickbait.",
-      "- Email body: 3 short paragraphs, under 120 words total.",
-      "- LinkedIn message: 1-2 sentences, under 300 characters.",
+      "- Email body: 3 paragraphs, 150-220 words total. Do NOT write fewer than 150 words.",
+      "- LinkedIn message: 2-3 sentences, under 400 characters.",
       "",
       `SIGNAL: ${JSON.stringify(signal)}`,
       `SALES_CONTEXT: ${JSON.stringify(salesContext)}`,
@@ -83,25 +88,31 @@ export async function buildDraft(
     }
   }
 
-  const safeLine =
-    signal.safety === "mentionable"
-      ? signal.summary
-      : "your team is going through a period of change and timing can matter.";
+  const mentionable = signal.safety === "mentionable";
+  const signalLine = mentionable
+    ? signal.summary
+    : "your team is navigating a period of change";
+  const relevanceLine = signal.relevanceReason
+    ? signal.relevanceReason
+    : `That kind of shift often means teams are rethinking how they find and engage the right buyers.`;
 
   const body = [
     `Hi there,`,
-    `Reached out because ${safeLine}.`,
-    `We help teams like yours with ${salesContext.offering.toLowerCase()}. The focus is on grounding outreach in real signals so messages land at the right moment.`,
-    `Worth a quick chat to see if there's a fit?`,
+    `Reached out because ${signalLine}. ${relevanceLine}`,
+    `We help teams like yours with ${salesContext.offering.toLowerCase()}. The idea is to ground outreach in real, timely signals so your messages reach people at the right moment, not just on a generic cadence.`,
+    `Would it make sense to connect for 15 minutes to see if there is a fit?`,
   ].join("\n\n");
 
-  const linkedin =
-    signal.safety === "mentionable"
-      ? `Noticed some recent momentum at your team. We help with ${salesContext.offering.toLowerCase()}. Open to a brief exchange?`
-      : `Your team's context caught my eye. We help with ${salesContext.offering.toLowerCase()}. Open to a quick chat?`;
+  const linkedin = mentionable
+    ? `Noticed ${signal.summary.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
+    : `Saw some interesting momentum at your team. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
+
+  const subject = mentionable && signal.summary.length < 55
+    ? signal.summary
+    : "A thought on your outreach timing";
 
   return {
-    emailSubject: "A thought on better outreach timing",
+    emailSubject: subject,
     emailBody: sanitizeDraft(body),
     linkedinBody: sanitizeDraft(linkedin),
     warning:

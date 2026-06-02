@@ -22,7 +22,10 @@ function LiIcon({ className }: { className?: string }) {
 
 function getAllSources(dossier: ResearchDossier): EvidenceSource[] {
   const sources = new Map<string, EvidenceSource>();
-  dossier.selectedSignal?.sources.forEach((s) => sources.set(s.url, s));
+  const pool = dossier.researchSources?.length
+    ? dossier.researchSources
+    : dossier.selectedSignal?.sources ?? [];
+  pool.forEach((s) => sources.set(s.url, s));
   return Array.from(sources.values());
 }
 
