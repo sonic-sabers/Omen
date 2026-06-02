@@ -194,7 +194,7 @@ export async function* runPipeline(
         : "No draft generated",
   };
 
-  // Stage 6: Review (self-improving loop, max 5 retries)
+  // Stage 6: Review (self-improving loop, bounded by review config)
   yield { type: "stage", stage: "review", status: "running" };
   let draft = rawDraft;
   if (rawDraft && judged.selectedSignal) {

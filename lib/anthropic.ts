@@ -4,6 +4,11 @@ import { readEnv } from "@/lib/env";
 
 let _client: Anthropic | null = null;
 
+type AnthropicJsonOptions = {
+  maxTokens?: number;
+  timeoutMs?: number;
+};
+
 function getClient(): Anthropic | null {
   const env = readEnv();
   if (!env.anthropicApiKey) return null;
@@ -11,18 +16,43 @@ function getClient(): Anthropic | null {
   return _client;
 }
 
-async function _askJson<T>(model: string, prompt: string, maxTokens: number): Promise<T | null> {
+function normalizeOptions(options?: number | AnthropicJsonOptions): Required<AnthropicJsonOptions> {
+  if (typeof options === "number") {
+    return {
+      maxTokens: options,
+      timeoutMs: ANTHROPIC_CONFIG.requestTimeoutMs,
+    };
+  }
+
+  return {
+    maxTokens: options?.maxTokens ?? ANTHROPIC_CONFIG.maxTokens,
+    timeoutMs: options?.timeoutMs ?? ANTHROPIC_CONFIG.requestTimeoutMs,
+  };
+}
+
+async function _askJson<T>(
+  model: string,
+  prompt: string,
+  options?: number | AnthropicJsonOptions,
+): Promise<T | null> {
   const client = getClient();
   if (!client) return null;
+  const requestOptions = normalizeOptions(options);
 
   try {
-    const message = await client.messages.create({
-      model,
-      max_tokens: maxTokens,
-      temperature: ANTHROPIC_CONFIG.temperature,
-      system: ANTHROPIC_CONFIG.systemPrompt,
-      messages: [{ role: "user", content: prompt }],
-    });
+    const message = await client.messages.create(
+      {
+        model,
+        max_tokens: requestOptions.maxTokens,
+        temperature: ANTHROPIC_CONFIG.temperature,
+        system: ANTHROPIC_CONFIG.systemPrompt,
+        messages: [{ role: "user", content: prompt }],
+      },
+      {
+        timeout: requestOptions.timeoutMs,
+        maxRetries: ANTHROPIC_CONFIG.maxRetries,
+      },
+    );
 
     const text = message.content
       .map((c) => (c.type === "text" ? c.text : ""))
@@ -36,10 +66,16 @@ async function _askJson<T>(model: string, prompt: string, maxTokens: number): Pr
   }
 }
 
-export async function askAnthropicJson<T>(prompt: string, maxTokens?: number): Promise<T | null> {
-  return _askJson<T>(readEnv().anthropicModel, prompt, maxTokens ?? ANTHROPIC_CONFIG.maxTokens);
+export async function askAnthropicJson<T>(
+  prompt: string,
+  options?: number | AnthropicJsonOptions,
+): Promise<T | null> {
+  return _askJson<T>(readEnv().anthropicModel, prompt, options);
 }
 
-export async function askAnthropicJsonFast<T>(prompt: string, maxTokens?: number): Promise<T | null> {
-  return _askJson<T>(ANTHROPIC_CONFIG.fastModel, prompt, maxTokens ?? ANTHROPIC_CONFIG.maxTokens);
+export async function askAnthropicJsonFast<T>(
+  prompt: string,
+  options?: number | AnthropicJsonOptions,
+): Promise<T | null> {
+  return _askJson<T>(ANTHROPIC_CONFIG.fastModel, prompt, options);
 }

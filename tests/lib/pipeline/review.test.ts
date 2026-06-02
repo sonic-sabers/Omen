@@ -1,15 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DraftOutput, SelectedSignal, SalesContext, Prospect } from "@/lib/types";
 
 vi.mock("@/lib/anthropic", () => ({
-  askAnthropicJson: vi.fn(),
+  askAnthropicJsonFast: vi.fn(),
 }));
 
 vi.mock("@/lib/pipeline/draft", () => ({
   buildDraft: vi.fn(),
 }));
 
-import { askAnthropicJson } from "@/lib/anthropic";
+import { askAnthropicJsonFast } from "@/lib/anthropic";
 import { buildDraft } from "@/lib/pipeline/draft";
 import { reviewDraft } from "@/lib/pipeline/review";
 
@@ -42,8 +42,12 @@ const mockSalesContext: SalesContext = {
 };
 
 describe("reviewDraft", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   it("returns draft unchanged when review passes on first attempt", async () => {
-    vi.mocked(askAnthropicJson).mockResolvedValueOnce({ pass: true, issues: [] });
+    vi.mocked(askAnthropicJsonFast).mockResolvedValueOnce({ pass: true, issues: [] });
     const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "live");
     expect(result.emailBody).toBe(mockDraft.emailBody);
     expect(result.reviewAttempts).toBe(1);
@@ -51,10 +55,10 @@ describe("reviewDraft", () => {
   });
 
   it("returns draft in fixture mode without calling LLM", async () => {
-    vi.mocked(askAnthropicJson).mockClear();
+    vi.mocked(askAnthropicJsonFast).mockClear();
     vi.mocked(buildDraft).mockClear();
     const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "fixture");
-    expect(askAnthropicJson).not.toHaveBeenCalled();
+    expect(askAnthropicJsonFast).not.toHaveBeenCalled();
     expect(buildDraft).not.toHaveBeenCalled();
     expect(result.reviewAttempts).toBe(0);
   });
@@ -64,7 +68,7 @@ describe("reviewDraft", () => {
       ...mockDraft,
       emailBody: "Hi Ashish,\n\nCignara hired 5 engineers.\n\nWe help with AI-powered sales intelligence.\n\nWorth a quick chat?",
     };
-    vi.mocked(askAnthropicJson)
+    vi.mocked(askAnthropicJsonFast)
       .mockResolvedValueOnce({ pass: false, issues: ["Para 1 does not reference the actual signal event"] })
       .mockResolvedValueOnce({ pass: true, issues: [] });
     vi.mocked(buildDraft).mockResolvedValueOnce(improvedDraft);
@@ -75,7 +79,7 @@ describe("reviewDraft", () => {
   });
 
   it("returns best attempt after maxRetries exhausted", async () => {
-    vi.mocked(askAnthropicJson).mockResolvedValue({ pass: false, issues: ["issue"] });
+    vi.mocked(askAnthropicJsonFast).mockResolvedValue({ pass: false, issues: ["issue"] });
     vi.mocked(buildDraft).mockResolvedValue(mockDraft);
     const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "live", 2);
     expect(result).toBeDefined();
@@ -83,7 +87,7 @@ describe("reviewDraft", () => {
   });
 
   it("preserves current draft when buildDraft returns undefined on retry", async () => {
-    vi.mocked(askAnthropicJson)
+    vi.mocked(askAnthropicJsonFast)
       .mockResolvedValueOnce({ pass: false, issues: ["issue"] })
       .mockResolvedValueOnce({ pass: false, issues: ["issue"] });
     vi.mocked(buildDraft).mockResolvedValueOnce(undefined);
@@ -94,7 +98,7 @@ describe("reviewDraft", () => {
   });
 
   it("skips buildDraft when maxRetries is 1 and review fails", async () => {
-    vi.mocked(askAnthropicJson).mockResolvedValueOnce({ pass: false, issues: ["issue"] });
+    vi.mocked(askAnthropicJsonFast).mockResolvedValueOnce({ pass: false, issues: ["issue"] });
     vi.mocked(buildDraft).mockClear();
 
     const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "live", 1);
@@ -104,7 +108,7 @@ describe("reviewDraft", () => {
 
   it("selects best attempt with fewest issues when all retries fail", async () => {
     const betterDraft: DraftOutput = { ...mockDraft, emailSubject: "better" };
-    vi.mocked(askAnthropicJson)
+    vi.mocked(askAnthropicJsonFast)
       .mockResolvedValueOnce({ pass: false, issues: ["issue1", "issue2", "issue3"] })
       .mockResolvedValueOnce({ pass: false, issues: ["issue1"] });
     vi.mocked(buildDraft).mockResolvedValueOnce(betterDraft);
@@ -112,5 +116,15 @@ describe("reviewDraft", () => {
     const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "live", 2);
     expect(result.emailSubject).toBe("better");
     expect(result.reviewAttempts).toBe(2);
+  });
+
+  it("does not regenerate when review call fails", async () => {
+    vi.mocked(askAnthropicJsonFast).mockResolvedValueOnce(null);
+    vi.mocked(buildDraft).mockClear();
+
+    const result = await reviewDraft(mockDraft, mockSignal, mockProspect, mockSalesContext, "live", 2);
+    expect(result.reviewAttempts).toBe(1);
+    expect(result.reviewPassed).toBe(false);
+    expect(buildDraft).not.toHaveBeenCalled();
   });
 });

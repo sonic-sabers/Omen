@@ -45,6 +45,7 @@ export async function buildDraft(
   mode: "fixture" | "live",
   prospect?: Pick<Prospect, "name" | "company" | "title">,
   reviewIssues?: string[],
+  timeoutMs?: number,
 ): Promise<DraftOutput | undefined> {
   if (!signal) return undefined;
 
@@ -89,7 +90,7 @@ export async function buildDraft(
         ? ["", "REVISION REQUIRED. Fix ALL of the following issues from the previous attempt:", ...reviewIssues.map(i => `- ${i}`)]
         : []),
     ].join("\n");
-    const llm = await askAnthropicJson<unknown>(prompt);
+    const llm = await askAnthropicJson<unknown>(prompt, { timeoutMs });
     const parsed = DraftResponseSchema.safeParse(llm);
     if (parsed.success) {
       const cleaned = {

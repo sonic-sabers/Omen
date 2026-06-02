@@ -4,6 +4,8 @@ import { REVIEW_CONFIG } from "@/lib/config";
 import { ReviewResponseSchema } from "@/lib/schemas";
 import type { DraftOutput, Prospect, SalesContext, SelectedSignal } from "@/lib/types";
 
+const REVIEW_CALL_FAILED = "Review call failed or returned invalid JSON";
+
 async function reviewOnce(
   draft: DraftOutput,
   signal: SelectedSignal,
@@ -28,13 +30,16 @@ async function reviewOnce(
   ].join("\n");
 
   try {
-    const llm = await askAnthropicJsonFast<unknown>(prompt, REVIEW_CONFIG.maxTokens);
+    const llm = await askAnthropicJsonFast<unknown>(prompt, {
+      maxTokens: REVIEW_CONFIG.maxTokens,
+      timeoutMs: REVIEW_CONFIG.timeoutMs,
+    });
     const parsed = ReviewResponseSchema.safeParse(llm);
     if (parsed.success) return parsed.data;
   } catch {
     // fall through
   }
-  return { pass: false, issues: ["Review call failed or returned invalid JSON"] };
+  return { pass: false, issues: [REVIEW_CALL_FAILED] };
 }
 
 export async function reviewDraft(
@@ -71,12 +76,17 @@ export async function reviewDraft(
       break;
     }
 
+    if (issues.includes(REVIEW_CALL_FAILED)) {
+      break;
+    }
+
     const retry = await buildDraft(
       signal,
       salesContext,
       "live",
       prospect,
       issues,
+      REVIEW_CONFIG.revisionTimeoutMs,
     );
 
     if (retry) {
