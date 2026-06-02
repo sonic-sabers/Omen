@@ -12,7 +12,10 @@ const salesContext: SalesContext = {
   tone: "consultative",
 };
 
-function makeSignal(summary: string): SelectedSignal {
+function makeSignal(
+  summary: string,
+  overrides: Partial<SelectedSignal> = {},
+): SelectedSignal {
   return {
     summary,
     relevanceReason: "Relevant signal",
@@ -21,6 +24,7 @@ function makeSignal(summary: string): SelectedSignal {
     sources: [{ sourceName: "LinkedIn", url: "https://example.com", snippet: summary, publishedAt: undefined }],
     score: 20,
     grade: "B",
+    ...overrides,
   };
 }
 
@@ -60,5 +64,25 @@ describe("buildDraft fallback sanitization", () => {
     const signal = makeSignal("A very long signal summary that definitely exceeds fifty-five characters total");
     const draft = await buildDraft(signal, salesContext, "fixture", prospect);
     expect(draft!.emailSubject).toBe("A thought on your outreach timing");
+  });
+
+  it("does not expose internal ranking metadata in fixture emailBody", async () => {
+    const signal = makeSignal("Acme announced a new enterprise sales motion", {
+      relevanceReason: "Selected as top-ranked signal (20/30, grade B).",
+    });
+    const draft = await buildDraft(signal, salesContext, "fixture", prospect);
+    expect(draft!.emailBody).not.toContain("Selected as top-ranked signal");
+    expect(draft!.emailBody).not.toContain("20/30");
+    expect(draft!.emailBody).not.toContain("grade B");
+  });
+
+  it("does not mention sensitive layoff details in fixture copy", async () => {
+    const signal = makeSignal("Acme announced a 15% workforce reduction amid restructuring.", {
+      relevanceReason: "Selected as top-ranked signal (20/30, grade B).",
+      safety: "usable_but_do_not_mention",
+    });
+    const draft = await buildDraft(signal, salesContext, "fixture", prospect);
+    expect(draft!.emailBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
+    expect(draft!.linkedinBody).not.toMatch(/layoff|workforce reduction|restructuring|selected as|20\/30|grade B/i);
   });
 });

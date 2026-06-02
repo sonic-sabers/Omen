@@ -39,6 +39,14 @@ function sanitizeSummary(summary: string): string {
     .slice(0, 120);
 }
 
+function buildPublicSignal(signal: SelectedSignal): Pick<SelectedSignal, "summary" | "safety" | "sources"> {
+  return {
+    summary: signal.summary,
+    safety: signal.safety,
+    sources: signal.sources,
+  };
+}
+
 export async function buildDraft(
   signal: SelectedSignal | undefined,
   salesContext: SalesContext,
@@ -71,10 +79,11 @@ export async function buildDraft(
       "- Do not make assumptions about the person beyond what the signal states.",
       "- No pressure tactics, urgency manipulation, or guilt-tripping.",
       "- No NSFW, offensive, or sensitive personal content.",
-      "- If the signal is about layoffs or workforce reduction: do NOT reference it directly. Acknowledge the company is in a period of change, nothing more.",
+      "- If the signal is about layoffs or workforce reduction: do NOT reference it directly. Use neutral business context only.",
+      "- Never mention internal ranking, score, grade, selected signal, relevance reason, persona fit, or rubric language.",
       "",
       "STRUCTURE:",
-      "- Para 1 (2-3 sentences): Open with the specific signal — name the actual event, announcement, or trigger. Make it clear you did real research.",
+      "- Para 1 (2-3 sentences): If the signal is mentionable, open with the specific event, announcement, or trigger. If the signal is sensitive, open with a neutral business context and do not name the event.",
       "- Para 2 (2-3 sentences): Explain what problem or opportunity this creates for them. Connect to SALES_CONTEXT offering concretely.",
       "- Para 3 (1-2 sentences): Soft CTA. No pressure.",
       "",
@@ -84,7 +93,7 @@ export async function buildDraft(
       "- LinkedIn message: 2-3 sentences, under 400 characters.",
       "",
       `PROSPECT: ${JSON.stringify({ name: prospect?.name, company: prospect?.company, title: prospect?.title })}`,
-      `SIGNAL: ${JSON.stringify(signal)}`,
+      `SIGNAL: ${JSON.stringify(buildPublicSignal(signal))}`,
       `SALES_CONTEXT: ${JSON.stringify(salesContext)}`,
       ...(reviewIssues?.length
         ? ["", "REVISION REQUIRED. Fix ALL of the following issues from the previous attempt:", ...reviewIssues.map(i => `- ${i}`)]
@@ -112,22 +121,25 @@ export async function buildDraft(
   const sanitized = sanitizeSummary(signal.summary);
   const signalLine = mentionable
     ? sanitized
-    : "your team is navigating a period of change";
-  const relevanceLine = signal.relevanceReason
-    ? signal.relevanceReason
-    : `That kind of shift often means teams are rethinking how they find and engage the right buyers.`;
+    : "I had a thought about your team's outreach timing";
+  const openerLine = mentionable
+    ? `Reached out because ${signalLine}.`
+    : signalLine;
+  const relevanceLine = mentionable
+    ? "That kind of shift often means teams are rethinking how they find and engage the right buyers."
+    : "For outbound teams, it can help to keep messages grounded in timely buying signals without adding noise.";
   const firstName = prospect?.name?.split(" ")[0] ?? "there";
 
   const body = [
     `Hi ${firstName},`,
-    `Reached out because ${signalLine}. ${relevanceLine}`,
+    `${openerLine} ${relevanceLine}`,
     `We help teams like yours with ${salesContext.offering.toLowerCase()}. The idea is to ground outreach in real, timely signals so your messages reach people at the right moment, not just on a generic cadence.`,
     `Would it make sense to connect for 15 minutes to see if there is a fit?`,
   ].join("\n\n");
 
   const linkedin = mentionable
     ? `Noticed ${sanitized.toLowerCase()}. We help with ${salesContext.offering.toLowerCase()} and thought there might be a connection. Open to a brief exchange?`
-    : `Saw some interesting momentum at your team. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
+    : `Had a thought about outreach timing. We help with ${salesContext.offering.toLowerCase()}. Worth a quick chat?`;
 
   const subject = mentionable && sanitized.length < 55
     ? sanitized
