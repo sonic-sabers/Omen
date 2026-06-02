@@ -162,7 +162,7 @@ function RankedSignalRow({
       className={`group/row rounded-lg border transition-all cursor-pointer ${isSelected || isPinned ? "border-primary/30 bg-primary/5 shadow-sm" : "border-transparent bg-muted/40 hover:border-border hover:bg-muted/70 hover:shadow-sm"}`}
       onClick={() => setShowBreakdown((v) => !v)}
     >
-      <div className="flex items-center gap-2 px-3 py-2">
+      <div className="flex items-center gap-2 px-3 py-1.5">
         <span className={`text-[10px] font-bold shrink-0 ${isSelected || isPinned ? "text-primary" : "text-muted-foreground"}`}>
           #{signal.rank}
         </span>
@@ -289,7 +289,7 @@ export function ResearchDossierView({
       <div className="border-t border-dashed border-border/60" />
 
       {/* ── 3. Ranked Signals (with steering pins + breakdowns) ── */}
-      <Section icon={<FileSearch className="h-3.5 w-3.5" />} title="All Ranked Signals" collapsible defaultOpen={true}>
+      <Section icon={<FileSearch className="h-3.5 w-3.5" />} title="All Ranked Signals" collapsible defaultOpen={false}>
         <p className="mb-2 text-[10px] text-muted-foreground">
           Pin any signal to use it instead of the agent's selection.
         </p>
