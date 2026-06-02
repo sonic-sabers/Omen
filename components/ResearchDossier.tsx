@@ -148,7 +148,6 @@ function Section({
  */
 function RankedSignalRow({
   signal,
-  isSelected,
   isPinned,
 }: {
   signal: RankedSignal;
