@@ -69,7 +69,7 @@ export function calculateConfidenceVerdict(
   ) {
     return "HIGH";
   }
-  if (score >= 5 && selectedSignal && selectedSignal.score >= 15) {
+  if (score >= 5 && selectedSignal && selectedSignal.score >= 12) {
     return "MEDIUM";
   }
   return "SKIP";

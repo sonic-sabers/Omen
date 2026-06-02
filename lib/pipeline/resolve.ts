@@ -1,3 +1,4 @@
+import { RESOLVE_CONFIG } from "@/lib/config";
 import type { Prospect, ResolvedProspect } from "@/lib/types";
 
 export type IdentityConfidence = "HIGH" | "MEDIUM" | "LOW";
@@ -9,37 +10,10 @@ export interface ResolutionResult {
   gate1Note?: string;
 }
 
-const COMMON_NAMES = new Set([
-  "john smith",
-  "jane smith",
-  "michael smith",
-  "david smith",
-  "robert smith",
-  "john johnson",
-  "michael johnson",
-  "david johnson",
-  "robert johnson",
-  "james smith",
-  "william smith",
-  "mary smith",
-  "jennifer smith",
-  "john brown",
-  "michael brown",
-  "david brown",
-  "john williams",
-  "chris",
-  "alex",
-  "jordan",
-  "taylor",
-  "morgan",
-  "casey",
-  "jamie",
-]);
-
 function isCommonName(name: string): boolean {
   const normalized = name.toLowerCase().trim();
   const firstName = normalized.split(" ")[0];
-  return COMMON_NAMES.has(normalized) || COMMON_NAMES.has(firstName);
+  return RESOLVE_CONFIG.commonNames.has(normalized) || RESOLVE_CONFIG.commonNames.has(firstName);
 }
 
 function calculateIdentityConfidence(prospect: Prospect): IdentityConfidence {
@@ -51,16 +25,16 @@ function calculateIdentityConfidence(prospect: Prospect): IdentityConfidence {
 
   // HIGH: Full name + company + at least one disambiguator (title/LinkedIn/location)
   if (
-    nameParts >= 2 &&
+    nameParts >= RESOLVE_CONFIG.minNameParts &&
     hasCompany &&
     (hasTitle || hasLinkedIn || hasLocation)
   ) {
     if (!isCommonName(prospect.name)) return "HIGH";
-    if (hasLinkedIn) return "HIGH"; // LinkedIn URL resolves ambiguity
+    if (hasLinkedIn) return "HIGH";
   }
 
   // MEDIUM: Name + company but missing disambiguators or common name
-  if (nameParts >= 2 && hasCompany) return "MEDIUM";
+  if (nameParts >= RESOLVE_CONFIG.minNameParts && hasCompany) return "MEDIUM";
 
   // LOW: Missing critical info or very ambiguous
   return "LOW";

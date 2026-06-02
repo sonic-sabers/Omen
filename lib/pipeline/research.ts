@@ -1,4 +1,4 @@
-import { SOURCE_BUDGETS } from "@/lib/config";
+import { RESEARCH_CONFIG, SOURCE_BUDGETS } from "@/lib/config";
 import { getFixtureSources, resolveFixtureId } from "@/lib/fixtures";
 import { searchTavily } from "@/lib/tavily";
 import type { RawSource, RunInput } from "@/lib/types";
@@ -18,13 +18,12 @@ function truncateSources(sources: RawSource[]): RawSource[] {
 }
 
 /**
- * R5: Multi-source search across different signal categories
- * - News/Press releases
- * - Podcasts/Interviews
- * - Conference talks
- * - Job postings
- * - Company blog
- * - LinkedIn (site:linkedin.com)
+ * R5: Multi-source search — 20 parallel queries across signal categories:
+ * News, Funding, M&A, Executive moves, Media/Podcasts, Conferences,
+ * Hiring signals, Product launches, Profile aggregators, Social/Twitter,
+ * Company blog, Job postings, Financial/regulatory, Industry awards,
+ * Quotes/opinions, Team changes, Customer/review signals, Patents/IP,
+ * Partnerships, Recent activity
  */
 function buildSearchQueries(
   prospect: RunInput["prospect"],
@@ -34,45 +33,55 @@ function buildSearchQueries(
 
   return [
     // News and press releases
-    {
-      query: `${base} ${title} news press release announcement`,
-      category: "news",
-    },
-    { query: `${base} funding investment series`, category: "funding" },
-    { query: `${base} acquisition merger partnership`, category: "m&a" },
+    { query: `${base} ${title} news press release announcement`, category: "news" },
+    { query: `${base} ${title} site:businesswire.com OR site:prnewswire.com`, category: "news" },
+
+    // Funding
+    { query: `${base} funding investment series raised`, category: "funding" },
+    { query: `${prospect.company} valuation funding round investors`, category: "funding" },
+
+    // M&A and partnerships
+    { query: `${base} acquisition merger partnership deal`, category: "m&a" },
 
     // Executive movements
-    {
-      query: `${base} ${title} appointed hired joined promoted`,
-      category: "executive",
-    },
+    { query: `${base} ${title} appointed hired joined promoted`, category: "executive" },
+    { query: `${prospect.company} leadership team changes executive hire`, category: "executive" },
 
-    // Podcasts and media appearances
-    { query: `${base} podcast interview keynote speaker`, category: "media" },
-    {
-      query: `${base} conference talk presentation webinar`,
-      category: "conference",
-    },
+    // Podcasts and media
+    { query: `${base} podcast interview guest speaker`, category: "media" },
+    { query: `${base} site:youtube.com OR site:spotify.com OR site:apple.com/podcasts`, category: "media" },
 
-    // Company signals
-    {
-      query: `${prospect.company} hiring expansion growth`,
-      category: "hiring",
-    },
-    {
-      query: `${prospect.company} product launch release announcement`,
-      category: "product",
-    },
+    // Conferences and events
+    { query: `${base} conference keynote webinar panel presentation`, category: "conference" },
 
-    // LinkedIn (direct profile search)
-    {
-      query: `${prospect.name} ${prospect.company} site:linkedin.com`,
-      category: "linkedin",
-    },
-    {
-      query: `${prospect.name} ${prospect.company} linkedin profile`,
-      category: "linkedin",
-    },
+    // Company hiring signals
+    { query: `${prospect.company} hiring "account executive" OR "sales" OR "revenue" jobs`, category: "hiring" },
+    { query: `${prospect.company} site:linkedin.com/jobs OR site:lever.co OR site:greenhouse.io`, category: "hiring" },
+
+    // Product and growth
+    { query: `${prospect.company} product launch release new feature`, category: "product" },
+    { query: `${prospect.company} customer win case study growth`, category: "product" },
+
+    // Social signals (Twitter/X, Reddit)
+    { query: `${prospect.name} twitter OR "x.com" opinion thought leadership`, category: "social" },
+    { query: `${prospect.company} reddit OR "hacker news" OR ycombinator discussion`, category: "social" },
+
+    // Financial and regulatory
+    { query: `${prospect.company} revenue earnings analyst report`, category: "financial" },
+
+    // Awards and recognition
+    { query: `${base} award recognition "forbes" OR "inc 500" OR "fast company"`, category: "awards" },
+
+    // Executive profile aggregators (LinkedIn blocks crawlers directly)
+    { query: `${prospect.name} ${prospect.company} crunchbase profile biography`, category: "profile" },
+    { query: `${prospect.name} ${prospect.company} background career history quotes`, category: "profile" },
+
+    // LinkedIn via aggregators that re-publish profile data
+    { query: `${prospect.name} ${prospect.company} linkedin summary experience`, category: "linkedin" },
+    { query: `"${prospect.name}" "${prospect.company}" site:rocketreach.co OR site:apollo.io OR site:zoominfo.com`, category: "linkedin" },
+    { query: `"${prospect.name}" linkedin ${title} ${prospect.company} OR site:signalhire.com OR site:contactout.com`, category: "linkedin" },
+    { query: `${prospect.name} ${prospect.company} previous role career path promoted`, category: "linkedin" },
+    { query: `${prospect.name} ${prospect.company} "connected with" OR "works at" OR "currently at" linkedin`, category: "linkedin" },
   ];
 }
 
@@ -135,10 +144,10 @@ export async function researchSignals(
       .join(", ")}`,
   ];
 
-  // Gate 2 warning if too few sources
-  if (sources.length < 3) {
+  // Gate 2 warning if below citation target
+  if (sources.length < RESEARCH_CONFIG.minSourceTarget) {
     notes.push(
-      "Gate 2 WARNING: Few sources found - signal strength may be limited.",
+      `Gate 2 WARNING: Only ${sources.length} sources found (target: ${RESEARCH_CONFIG.minSourceTarget}+). Signal strength may be limited.`,
     );
   }
 

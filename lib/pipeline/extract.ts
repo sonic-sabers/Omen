@@ -1,4 +1,5 @@
 import { askAnthropicJson } from "@/lib/anthropic";
+import { EXTRACT_CONFIG } from "@/lib/config";
 import { ExtractResponseSchema } from "@/lib/schemas";
 import type { RawSource, SignalCandidate } from "@/lib/types";
 
@@ -23,16 +24,14 @@ function isNoise(source: RawSource): boolean {
   const text = source.snippet.toLowerCase();
 
   // Drop wrong person indicators
-  if (text.includes("unverified")) return true;
-  if (text.includes("rumor")) return true;
-  if (text.includes("allegedly")) return true;
+  if (EXTRACT_CONFIG.noiseKeywords.some((kw) => text.includes(kw))) return true;
 
-  // Drop stale content (older than 2 years)
+  // Drop stale content
   if (source.publishedAt) {
     const days =
       (Date.now() - new Date(source.publishedAt).getTime()) /
       (1000 * 60 * 60 * 24);
-    if (days > 730) return true; // > 2 years old
+    if (days > EXTRACT_CONFIG.staleThresholdDays) return true;
   }
 
   return false;
@@ -44,14 +43,14 @@ function isNoise(source: RawSource): boolean {
 function classifySignalType(summary: string, source: RawSource): SignalType {
   const text = `${summary} ${source.snippet}`.toLowerCase();
 
-  // Check if about a specific person
+  // Person-level signals
   const personIndicators =
-    /\b(ceo|cto|cfo|coo|vp|head of|director|leadership|executive|appointed|hired|joined|promoted|founded|founded by)\b/;
+    /\b(ceo|cto|cfo|coo|vp|head of|director|leadership|executive|appointed|hired|joined|promoted|founded|founded by|speaker|keynote|podcast|interview|panel|guest|author)\b/;
   if (personIndicators.test(text)) return "person";
 
-  // Check if company-level
+  // Company-level signals (expanded to catch hiring plans, product signals, press)
   const companyIndicators =
-    /\b(company|firm|organization|enterprise|startup|funding|acquisition|merger|earnings|revenue)\b/;
+    /\b(company|firm|organization|enterprise|startup|funding|acquisition|merger|earnings|revenue|hiring|expansion|launch|announced|growth|partnership|investment|series|raised|valuation|headcount|team)\b/;
   if (companyIndicators.test(text)) return "company";
 
   return "generic";
@@ -100,7 +99,7 @@ export async function extractCandidates(
         // Skip if signal is generic (low value)
         if (signalType === "generic") continue;
 
-        out.push({ summary: c.summary.slice(0, 220), sources: linked });
+        out.push({ summary: c.summary.slice(0, EXTRACT_CONFIG.summaryMaxChars), sources: linked });
       }
       if (out.length > 0) return out;
     }
@@ -159,5 +158,5 @@ export async function extractCandidates(
     return 0;
   });
 
-  return candidates.map(({ summary, sources }) => ({ summary, sources }));
+  return candidates.map(({ summary, sources, signalType }) => ({ summary, sources, signalType }));
 }

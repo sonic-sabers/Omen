@@ -146,6 +146,7 @@ export interface RawSource {
 export interface SignalCandidate {
   summary: string;
   sources: RawSource[];
+  signalType?: "person" | "company" | "generic";
 }
 
 export interface ScoreBreakdown {

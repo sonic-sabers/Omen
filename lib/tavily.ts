@@ -1,4 +1,4 @@
-import { SOURCE_BUDGETS } from "@/lib/config";
+import { SOURCE_BUDGETS, TAVILY_CONFIG } from "@/lib/config";
 import { readEnv } from "@/lib/env";
 import type { RawSource } from "@/lib/types";
 
@@ -22,14 +22,14 @@ export async function searchTavily(query: string, signal: AbortSignal): Promise<
   signal.addEventListener("abort", () => controller.abort(), { once: true });
 
   try {
-    const response = await fetch("https://api.tavily.com/search", {
+    const response = await fetch(TAVILY_CONFIG.endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         api_key: tavilyApiKey,
         query,
-        max_results: Math.min(8, SOURCE_BUDGETS.maxSourcesPerRun),
-        search_depth: "advanced",
+        max_results: TAVILY_CONFIG.maxResultsPerQuery,
+        search_depth: TAVILY_CONFIG.searchDepth,
       }),
       signal: controller.signal,
     });
@@ -44,10 +44,10 @@ export async function searchTavily(query: string, signal: AbortSignal): Promise<
     for (const row of json.results ?? []) {
       if (!row.url || !row.content) continue;
       out.push({
-        sourceName: row.title?.slice(0, 120) || "Web Source",
+        sourceName: row.title?.slice(0, TAVILY_CONFIG.sourceNameMaxChars) || "Web Source",
         url: row.url,
         publishedAt: row.published_date,
-        snippet: row.content.slice(0, 800),
+        snippet: row.content.slice(0, TAVILY_CONFIG.snippetMaxChars),
       });
     }
 

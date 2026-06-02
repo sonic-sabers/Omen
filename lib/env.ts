@@ -1,3 +1,5 @@
+import { ANTHROPIC_CONFIG } from "@/lib/config";
+
 function getEnv(name: string): string | undefined {
   const value = process.env[name];
   return value && value.trim().length > 0 ? value : undefined;
@@ -11,7 +13,7 @@ export interface EnvConfig {
 
 export function readEnv(): EnvConfig {
   return {
-    anthropicModel: getEnv("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6",
+    anthropicModel: getEnv("ANTHROPIC_MODEL") ?? ANTHROPIC_CONFIG.defaultModel,
     anthropicApiKey: getEnv("ANTHROPIC_API_KEY"),
     tavilyApiKey: getEnv("TAVILY_API_KEY"),
   };
