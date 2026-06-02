@@ -269,6 +269,13 @@ export function ResearchDossierView({
           </div>
         )}
         <p className="font-medium leading-snug">{displaySignal?.summary ?? "No signal found"}</p>
+        {!displaySignal && dossier.fallbackNotes.length > 0 && (
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-800">
+            {dossier.fallbackNotes.map((note, index) => (
+              <p key={index}>{note}</p>
+            ))}
+          </div>
+        )}
         {displaySignal?.relevanceReason && (
           <p className="mt-1 text-muted-foreground">{displaySignal.relevanceReason}</p>
         )}
@@ -355,7 +362,7 @@ export function ResearchDossierView({
       {/* ── 4. All Ranked Signals ── */}
       <Section icon={<FileSearch className="h-3.5 w-3.5" />} title="All Ranked Signals" collapsible defaultOpen={false}>
         <p className="mb-2 text-[10px] text-muted-foreground">
-          Pin any signal to use it instead of the agent's selection.
+          Pin any signal to use it instead of the agent&apos;s selection.
         </p>
         <div className="space-y-1.5">
           {dossier.rankedSignals.length ? (

@@ -43,13 +43,20 @@ describe("pipeline fixtures", () => {
     const events = await collect(baseInput("ambiguous-namesake"));
     const dossier = events.find((e) => e.type === "dossier");
     const flags = dossier && dossier.type === "dossier" ? dossier.dossier.riskFlags : [];
+    const rejected = dossier && dossier.type === "dossier" ? dossier.dossier.rejectedAlternatives : [];
+    expect(dossier).toBeTruthy();
     expect(flags.some((f) => f.toLowerCase().includes("common-name risk"))).toBe(true);
+    expect(rejected.some((r) => r.reason.toLowerCase().includes("wrong-person"))).toBe(true);
   });
 
   it("rejects stale/conflicting alternatives", async () => {
     const events = await collect(baseInput("stale-conflict"));
     const dossier = events.find((e) => e.type === "dossier");
     const rejected = dossier && dossier.type === "dossier" ? dossier.dossier.rejectedAlternatives : [];
+    const sources = dossier && dossier.type === "dossier" ? dossier.dossier.researchSources : [];
+    expect(dossier).toBeTruthy();
+    expect(sources?.length).toBeGreaterThan(0);
     expect(rejected.length).toBeGreaterThan(0);
+    expect(rejected.some((r) => r.summary.toLowerCase().includes("unverified"))).toBe(true);
   });
 });
