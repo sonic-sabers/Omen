@@ -199,12 +199,14 @@ function scoreCandidate(
         ? 1
         : 3,
   );
+  const isCredible = RANKING_CONFIG.credibleSources.some((s) =>
+    sourceNames.includes(s),
+  );
+  const isForum = RANKING_CONFIG.forumIndicators.some((s) =>
+    sourceNames.includes(s),
+  );
   const sourceCredibility = clampScore(
-    sourceNames.includes("reuters") || sourceNames.includes("techcrunch")
-      ? 5
-      : joined.includes("unverified") || sourceNames.includes("forum")
-        ? 1
-        : 3,
+    isCredible ? 5 : joined.includes("unverified") || isForum ? 1 : 3,
   );
 
   const safety = detectSafety(joined);

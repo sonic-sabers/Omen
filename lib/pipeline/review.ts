@@ -2,7 +2,12 @@ import { askAnthropicJsonFast } from "@/lib/anthropic";
 import { buildDraft } from "@/lib/pipeline/draft";
 import { REVIEW_CONFIG } from "@/lib/config";
 import { ReviewResponseSchema } from "@/lib/schemas";
-import type { DraftOutput, Prospect, SalesContext, SelectedSignal } from "@/lib/types";
+import type {
+  DraftOutput,
+  Prospect,
+  SalesContext,
+  SelectedSignal,
+} from "@/lib/types";
 
 const REVIEW_CALL_FAILED = "Review call failed or returned invalid JSON";
 
@@ -25,7 +30,7 @@ async function reviewOnce(
     "6. Generic opener: Para 1 does not name the actual signal event from SIGNAL",
     "",
     `PROSPECT: ${JSON.stringify({ name: prospect.name, company: prospect.company, title: prospect.title })}`,
-    `SIGNAL: ${JSON.stringify({ summary: signal.summary, sources: signal.sources.map(s => s.snippet) })}`,
+    `SIGNAL: ${JSON.stringify({ summary: signal.summary, sources: signal.sources.map((s) => s.snippet) })}`,
     `DRAFT: ${JSON.stringify(draft)}`,
   ].join("\n");
 
@@ -58,6 +63,7 @@ export async function reviewDraft(
   let bestAttempt = draft;
   let bestIssueCount = Infinity;
   let attempt = 0;
+  let prevIssueKey = "";
 
   while (attempt < maxRetries) {
     attempt++;
@@ -72,13 +78,12 @@ export async function reviewDraft(
       return { ...current, reviewAttempts: attempt, reviewPassed: true };
     }
 
-    if (attempt >= maxRetries) {
-      break;
-    }
+    if (attempt >= maxRetries) break;
+    if (issues.includes(REVIEW_CALL_FAILED)) break;
 
-    if (issues.includes(REVIEW_CALL_FAILED)) {
-      break;
-    }
+    const issueKey = [...issues].sort().join("|");
+    if (issueKey === prevIssueKey) break;
+    prevIssueKey = issueKey;
 
     const retry = await buildDraft(
       signal,

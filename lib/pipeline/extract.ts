@@ -73,7 +73,8 @@ export async function extractCandidates(
 
   // Live mode filters noisy sources before LLM extraction. Fixture mode keeps
   // them so edge-case demos can show why risky signals were rejected.
-  const validSources = mode === "live" ? sources.filter((s) => !isNoise(s)) : sources;
+  const validSources =
+    mode === "live" ? sources.filter((s) => !isNoise(s)) : sources;
 
   if (mode === "live") {
     const prospectContext = prospect
@@ -128,27 +129,10 @@ export async function extractCandidates(
   const seenSummaries = new Set<string>();
 
   for (const source of validSources) {
-    const text = source.snippet.toLowerCase();
     const snippet = source.snippet.slice(0, EXTRACT_CONFIG.summaryMaxChars);
+    const signalType = classifySignalType(snippet, source);
 
-    let signalType: SignalType | null = null;
-    if (text.includes("series") || text.includes("funding") || text.includes("raised")) {
-      signalType = "company";
-    } else if (text.includes("hiring") || text.includes("account executive")) {
-      signalType = "company";
-    } else if (text.includes("appointed") || text.includes("hired") || text.includes("joined as")) {
-      signalType = "person";
-    } else if (text.includes("acquisition") || text.includes("acquired") || text.includes("merger")) {
-      signalType = "company";
-    } else if (text.includes("layoff") || text.includes("workforce reduction")) {
-      signalType = "company";
-    } else if (text.includes("product") || text.includes("conflict")) {
-      signalType = "company";
-    } else if (text.includes("podcast") || text.includes("interview") || text.includes("speaker") || text.includes("keynote") || text.includes("conference")) {
-      signalType = classifySignalType(snippet, source);
-    }
-
-    if (!signalType || signalType === "generic") continue;
+    if (signalType === "generic") continue;
 
     // Use the actual snippet as the summary — factual, not templated
     const summary = snippet;
@@ -171,5 +155,9 @@ export async function extractCandidates(
     return 0;
   });
 
-  return candidates.map(({ summary, sources, signalType }) => ({ summary, sources, signalType }));
+  return candidates.map(({ summary, sources, signalType }) => ({
+    summary,
+    sources,
+    signalType,
+  }));
 }

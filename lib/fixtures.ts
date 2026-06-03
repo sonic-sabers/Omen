@@ -22,7 +22,8 @@ const FIXTURE_SOURCES: Record<FixtureId, RawSource[]> = {
       sourceName: "TechCrunch",
       url: "https://example.com/funding",
       publishedAt: nowIso(5),
-      snippet: "Acme closed a $25M Series B to expand enterprise sales operations.",
+      snippet:
+        "Acme closed a $25M Series B to expand enterprise sales operations.",
     },
     {
       sourceName: "Company Blog",
@@ -36,7 +37,8 @@ const FIXTURE_SOURCES: Record<FixtureId, RawSource[]> = {
       sourceName: "Regional News",
       url: "https://example.com/other-jane",
       publishedAt: nowIso(7),
-      snippet: "Jane Smith at a different Acme in the UK was appointed VP Sales after leading regional growth.",
+      snippet:
+        "Jane Smith at a different Acme in the UK was appointed VP Sales after leading regional growth.",
     },
   ],
   "stale-conflict": [
@@ -50,7 +52,8 @@ const FIXTURE_SOURCES: Record<FixtureId, RawSource[]> = {
       sourceName: "Forum",
       url: "https://example.com/unverified",
       publishedAt: nowIso(1),
-      snippet: "Unverified claim that Acme announced a product pause amid internal conflict.",
+      snippet:
+        "Unverified claim that Acme announced a product pause amid internal conflict.",
     },
   ],
   "layoffs-sensitive": [
@@ -71,7 +74,11 @@ export function getFixtureSources(fixtureId?: string): RawSource[] {
 
 export function resolveFixtureId(input: RunInput): FixtureId {
   if (!input.fixtureId) return "funding-success";
-  return FIXTURE_IDS.includes(input.fixtureId as FixtureId)
-    ? (input.fixtureId as FixtureId)
-    : "funding-success";
+  if (FIXTURE_IDS.includes(input.fixtureId as FixtureId)) {
+    return input.fixtureId as FixtureId;
+  }
+  console.warn(
+    `[fixtures] Unknown fixtureId "${input.fixtureId}" — falling back to "funding-success". Valid IDs: ${FIXTURE_IDS.join(", ")}`,
+  );
+  return "funding-success";
 }

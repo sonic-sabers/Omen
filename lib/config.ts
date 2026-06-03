@@ -61,6 +61,17 @@ export const EXTRACT_CONFIG = {
 // ─── Signal Ranking Config ────────────────────────────────────────────────────
 
 export const RANKING_CONFIG = {
+  credibleSources: [
+    "reuters",
+    "techcrunch",
+    "bloomberg",
+    "wsj",
+    "ft",
+    "forbes",
+    "businesswire",
+    "prnewswire",
+  ] as string[],
+  forumIndicators: ["forum", "reddit", "hackernews", "quora"] as string[],
   dimensions: {
     freshness: 0.17,
     specificity: 0.19,

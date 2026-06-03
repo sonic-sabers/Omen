@@ -1,6 +1,6 @@
 import { RESEARCH_CONFIG, SOURCE_BUDGETS } from "@/lib/config";
 import { getFixtureSources, resolveFixtureId } from "@/lib/fixtures";
-import { searchTavily } from "@/lib/tavily";
+import { searchTavily, TavilyError } from "@/lib/tavily";
 import type { RawSource, RunInput } from "@/lib/types";
 
 function truncateSources(sources: RawSource[]): RawSource[] {
@@ -37,94 +37,202 @@ function buildSearchQueries(
     {
       query: `"${name}" "${company}" news announcement`,
       category: "news",
-      domains: ["techcrunch.com", "forbes.com", "businesswire.com", "prnewswire.com", "venturebeat.com", "inc.com", "wired.com", "bloomberg.com", "reuters.com", "wsj.com", "ft.com"],
+      domains: [
+        "techcrunch.com",
+        "forbes.com",
+        "businesswire.com",
+        "prnewswire.com",
+        "venturebeat.com",
+        "inc.com",
+        "wired.com",
+        "bloomberg.com",
+        "reuters.com",
+        "wsj.com",
+        "ft.com",
+      ],
     },
 
     // Funding
     {
       query: `"${name}" "${company}" funding raised series investment`,
       category: "funding",
-      domains: ["crunchbase.com", "techcrunch.com", "pitchbook.com", "axios.com", "bloomberg.com", "businessinsider.com"],
+      domains: [
+        "crunchbase.com",
+        "techcrunch.com",
+        "pitchbook.com",
+        "axios.com",
+        "bloomberg.com",
+        "businessinsider.com",
+      ],
     },
     {
       query: `"${company}" funding round raised`,
       category: "funding",
-      domains: ["crunchbase.com", "pitchbook.com", "techcrunch.com", "venturebeat.com"],
+      domains: [
+        "crunchbase.com",
+        "pitchbook.com",
+        "techcrunch.com",
+        "venturebeat.com",
+      ],
     },
 
     // M&A
     {
       query: `"${name}" "${company}" acquisition merger partnership deal`,
       category: "m&a",
-      domains: ["reuters.com", "bloomberg.com", "wsj.com", "techcrunch.com", "businesswire.com"],
+      domains: [
+        "reuters.com",
+        "bloomberg.com",
+        "wsj.com",
+        "techcrunch.com",
+        "businesswire.com",
+      ],
     },
 
     // Executive movements
     {
       query: `"${name}" ${title} appointed hired joined promoted`,
       category: "executive",
-      domains: ["linkedin.com", "businesswire.com", "prnewswire.com", "globenewswire.com", "accesswire.com"],
+      domains: [
+        "linkedin.com",
+        "businesswire.com",
+        "prnewswire.com",
+        "globenewswire.com",
+        "accesswire.com",
+      ],
     },
 
     // Podcasts & media appearances
     {
       query: `"${name}" podcast interview speaker`,
       category: "media",
-      domains: ["spotify.com", "podcasts.apple.com", "youtube.com", "podchaser.com", "listennotes.com", "buzzsprout.com", "simplecast.com"],
+      domains: [
+        "spotify.com",
+        "podcasts.apple.com",
+        "youtube.com",
+        "podchaser.com",
+        "listennotes.com",
+        "buzzsprout.com",
+        "simplecast.com",
+      ],
     },
     {
       query: `"${name}" "${company}" interview keynote panel`,
       category: "media",
-      domains: ["youtube.com", "techcrunch.com", "forbes.com", "inc.com", "wired.com", "saastr.com", "ycombinator.com"],
+      domains: [
+        "youtube.com",
+        "techcrunch.com",
+        "forbes.com",
+        "inc.com",
+        "wired.com",
+        "saastr.com",
+        "ycombinator.com",
+      ],
     },
 
     // Hiring signals
     {
       query: `"${company}" hiring jobs open roles`,
       category: "hiring",
-      domains: ["lever.co", "greenhouse.io", "ashbyhq.com", "workable.com", "jobs.weekday.works", "wellfound.com", "linkedin.com"],
+      domains: [
+        "lever.co",
+        "greenhouse.io",
+        "ashbyhq.com",
+        "workable.com",
+        "jobs.weekday.works",
+        "wellfound.com",
+        "linkedin.com",
+      ],
     },
 
     // Product & growth
     {
       query: `"${company}" product launch feature announcement`,
       category: "product",
-      domains: ["producthunt.com", "techcrunch.com", "venturebeat.com", "businesswire.com", "prnewswire.com", "g2.com", "capterra.com"],
+      domains: [
+        "producthunt.com",
+        "techcrunch.com",
+        "venturebeat.com",
+        "businesswire.com",
+        "prnewswire.com",
+        "g2.com",
+        "capterra.com",
+      ],
     },
 
     // Social & thought leadership
     {
       query: `"${name}" "${company}"`,
       category: "social",
-      domains: ["twitter.com", "x.com", "threads.net", "news.ycombinator.com", "reddit.com"],
+      domains: [
+        "twitter.com",
+        "x.com",
+        "threads.net",
+        "news.ycombinator.com",
+        "reddit.com",
+      ],
     },
 
     // Financial / analyst
     {
       query: `"${company}" revenue growth earnings`,
       category: "financial",
-      domains: ["bloomberg.com", "wsj.com", "ft.com", "reuters.com", "seekingalpha.com", "fool.com"],
+      domains: [
+        "bloomberg.com",
+        "wsj.com",
+        "ft.com",
+        "reuters.com",
+        "seekingalpha.com",
+        "fool.com",
+      ],
     },
 
     // Awards & recognition
     {
       query: `"${name}" award recognition list`,
       category: "awards",
-      domains: ["forbes.com", "inc.com", "fastcompany.com", "fortune.com", "businessinsider.com"],
+      domains: [
+        "forbes.com",
+        "inc.com",
+        "fastcompany.com",
+        "fortune.com",
+        "businessinsider.com",
+      ],
     },
 
     // Profile aggregators
     {
       query: `"${name}" "${company}" profile career background`,
       category: "profile",
-      domains: ["crunchbase.com", "wellfound.com", "rocketreach.co", "apollo.io", "zoominfo.com", "clearbit.com", "clay.com"],
+      domains: [
+        "crunchbase.com",
+        "wellfound.com",
+        "rocketreach.co",
+        "apollo.io",
+        "zoominfo.com",
+        "clearbit.com",
+        "clay.com",
+      ],
     },
 
     // Weekday & job intelligence
     {
       query: `"${company}" hiring team growth`,
       category: "hiring",
-      domains: ["weekday.works", "jobs.weekday.works", "getpocket.com", "builtin.com", "builtinsf.com", "builtinnyc.com", "builtinboston.com", "builtinchicago.com", "builtinla.com", "builtinseattle.com", "builtinaustin.com", "builtincolorado.com"],
+      domains: [
+        "weekday.works",
+        "jobs.weekday.works",
+        "getpocket.com",
+        "builtin.com",
+        "builtinsf.com",
+        "builtinnyc.com",
+        "builtinboston.com",
+        "builtinchicago.com",
+        "builtinla.com",
+        "builtinseattle.com",
+        "builtinaustin.com",
+        "builtincolorado.com",
+      ],
     },
   ];
 }
@@ -146,10 +254,20 @@ export async function researchSignals(
   const queries = buildSearchQueries(input.prospect);
 
   // Parallel search across all categories
+  const tavilyErrors: string[] = [];
   const batches = await Promise.all(
     queries.map(async ({ query, category, domains }) => {
-      const results = await searchTavily(query, signal, domains);
-      return results.map((r) => ({ ...r, sourceCategory: category }));
+      try {
+        const results = await searchTavily(query, signal, domains);
+        return results.map((r) => ({ ...r, sourceCategory: category }));
+      } catch (err) {
+        if (err instanceof TavilyError) {
+          if (err.code === "no_api_key" || err.code === "auth_failed")
+            throw err;
+          tavilyErrors.push(`${category}: ${err.message}`);
+        }
+        return [];
+      }
     }),
   );
 
@@ -176,7 +294,8 @@ export async function researchSignals(
   // Use last name as minimum bar — first name alone too common
   const lastName = nameLower.split(" ").at(-1) ?? nameLower;
   const filtered = Array.from(dedup.values()).filter((s) => {
-    const cat = (s as RawSource & { sourceCategory?: string }).sourceCategory ?? "";
+    const cat =
+      (s as RawSource & { sourceCategory?: string }).sourceCategory ?? "";
     if (COMPANY_ONLY_CATEGORIES.has(cat)) return true;
     const text = `${s.snippet} ${s.sourceName}`.toLowerCase();
     return text.includes(lastName);
@@ -199,6 +318,9 @@ export async function researchSignals(
     `Categories: ${Object.entries(categoryCounts)
       .map(([k, v]) => `${k}(${v})`)
       .join(", ")}`,
+    ...(tavilyErrors.length > 0
+      ? [`Search errors (${tavilyErrors.length}): ${tavilyErrors.join("; ")}`]
+      : []),
   ];
 
   // Gate 2 warning if below citation target

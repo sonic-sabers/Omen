@@ -1,3 +1,4 @@
+import { v7 as uuidv7 } from "uuid";
 import type { ResearchDossier, RunRecord } from "@/lib/types";
 import { compileMetrics, determineSignalStrength } from "@/lib/metrics";
 
@@ -31,7 +32,7 @@ export function saveRun(
   signalTypes: { signalType?: "person" | "company" | "generic" }[] = [],
 ): RunRecord {
   pruneExpired();
-  const id = `run_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const id = `run_${Date.now()}_${uuidv7().replace(/-/g, "").slice(0, 16)}`;
   const tier = confidenceTier(dossier);
 
   // Compile metrics

@@ -3,6 +3,7 @@ import { ANTHROPIC_CONFIG } from "@/lib/config";
 import { readEnv } from "@/lib/env";
 
 let _client: Anthropic | null = null;
+let _clientKey: string | null = null;
 
 type AnthropicJsonOptions = {
   maxTokens?: number;
@@ -12,11 +13,16 @@ type AnthropicJsonOptions = {
 function getClient(): Anthropic | null {
   const env = readEnv();
   if (!env.anthropicApiKey) return null;
-  if (!_client) _client = new Anthropic({ apiKey: env.anthropicApiKey });
+  if (!_client || _clientKey !== env.anthropicApiKey) {
+    _client = new Anthropic({ apiKey: env.anthropicApiKey });
+    _clientKey = env.anthropicApiKey;
+  }
   return _client;
 }
 
-function normalizeOptions(options?: number | AnthropicJsonOptions): Required<AnthropicJsonOptions> {
+function normalizeOptions(
+  options?: number | AnthropicJsonOptions,
+): Required<AnthropicJsonOptions> {
   if (typeof options === "number") {
     return {
       maxTokens: options,
@@ -54,13 +60,17 @@ async function _askJson<T>(
       },
     );
 
-    const text = message.content
+    const raw = message.content
       .map((c) => (c.type === "text" ? c.text : ""))
       .join("\n")
       .trim();
 
-    if (!text) return null;
-    return JSON.parse(text) as T;
+    if (!raw) return null;
+    const text = raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/, "")
+      .trim();
+    return JSON.parse(text) as unknown as T;
   } catch {
     return null;
   }
