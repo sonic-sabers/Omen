@@ -10,10 +10,13 @@ export interface ResolutionResult {
   gate1Note?: string;
 }
 
-function isCommonName(name: string): boolean {
-  const normalized = name.toLowerCase().trim();
-  const firstName = normalized.split(" ")[0];
-  return RESOLVE_CONFIG.commonNames.has(normalized) || RESOLVE_CONFIG.commonNames.has(firstName);
+function isAmbiguousName(name: string): boolean {
+  const parts = name.trim().split(/\s+/);
+  // Single-token name (no surname) is inherently ambiguous
+  if (parts.length < RESOLVE_CONFIG.minNameParts) return true;
+  // Very short full name (e.g. "Al Go") is likely ambiguous without a disambiguator
+  if (name.trim().replace(/\s+/g, "").length <= 5) return true;
+  return false;
 }
 
 function calculateIdentityConfidence(prospect: Prospect): IdentityConfidence {
@@ -29,7 +32,7 @@ function calculateIdentityConfidence(prospect: Prospect): IdentityConfidence {
     hasCompany &&
     (hasTitle || hasLinkedIn || hasLocation)
   ) {
-    if (!isCommonName(prospect.name)) return "HIGH";
+    if (!isAmbiguousName(prospect.name)) return "HIGH";
     if (hasLinkedIn) return "HIGH";
   }
 
@@ -53,12 +56,12 @@ export function resolveProspect(prospect: Prospect): ResolutionResult {
   };
 
   const confidence = calculateIdentityConfidence(normalized);
-  const isAmbiguous = isCommonName(normalized.name);
+  const isAmbiguous = isAmbiguousName(normalized.name);
 
   // Gate 1: Identity resolution check
   if (isAmbiguous && !normalized.linkedinUrl) {
     warnings.push(
-      "Gate 1: Common-name risk detected. LinkedIn URL recommended for disambiguation.",
+      "Gate 1: Ambiguous name (no surname or very short). LinkedIn URL recommended for disambiguation.",
     );
   }
 

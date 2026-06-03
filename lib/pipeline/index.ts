@@ -121,33 +121,21 @@ export async function* runPipeline(
   const candidates = await extractCandidates(sources, input.mode, resolved);
 
   // Drop noise: filter out candidates with wrong person, stale, or irrelevant
-  const validCandidates = input.mode === "fixture"
-    ? candidates
-    : candidates.filter((c) => {
-        const text = c.summary.toLowerCase();
-        // Drop if clearly wrong person (unverified, rumor)
-        if (text.includes("unverified") || text.includes("rumor")) return false;
-        return true;
-      });
+  const validCandidates =
+    input.mode === "fixture"
+      ? candidates
+      : candidates.filter((c) => {
+          const text = c.summary.toLowerCase();
+          // Drop if clearly wrong person (unverified, rumor)
+          if (text.includes("unverified") || text.includes("rumor"))
+            return false;
+          return true;
+        });
 
   // Track signal types for metrics (person vs company specificity)
-  const signalTypes = validCandidates.map((c) => {
-    const text = c.summary.toLowerCase();
-    if (
-      text.includes("executive") ||
-      text.includes("appointed") ||
-      text.includes("hired") ||
-      text.includes("joined") ||
-      text.includes("promoted") ||
-      text.includes("ceo") ||
-      text.includes("cto") ||
-      text.includes("cfo") ||
-      text.includes("vp ")
-    ) {
-      return { signalType: "person" as const };
-    }
-    return { signalType: "company" as const };
-  });
+  const signalTypes = validCandidates.map((c) => ({
+    signalType: c.signalType,
+  }));
 
   yield {
     type: "stage",
@@ -182,7 +170,12 @@ export async function* runPipeline(
   // Gate 3: Balanced strictness - only draft for HIGH/MEDIUM
   let rawDraft = undefined;
   if (confidenceTier === "HIGH" || confidenceTier === "MEDIUM") {
-    rawDraft = await buildDraft(judged.selectedSignal, salesContext, input.mode, resolved);
+    rawDraft = await buildDraft(
+      judged.selectedSignal,
+      salesContext,
+      input.mode,
+      resolved,
+    );
   }
 
   yield {
@@ -200,7 +193,13 @@ export async function* runPipeline(
   yield { type: "stage", stage: "review", status: "running" };
   let draft = rawDraft;
   if (rawDraft && judged.selectedSignal) {
-    draft = await reviewDraft(rawDraft, judged.selectedSignal, resolved, salesContext, input.mode);
+    draft = await reviewDraft(
+      rawDraft,
+      judged.selectedSignal,
+      resolved,
+      salesContext,
+      input.mode,
+    );
   }
   yield {
     type: "stage",

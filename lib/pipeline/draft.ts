@@ -1,28 +1,45 @@
 import { askAnthropicJson } from "@/lib/anthropic";
 import { DraftResponseSchema } from "@/lib/schemas";
-import type { DraftOutput, Prospect, SalesContext, SelectedSignal } from "@/lib/types";
+import type {
+  DraftOutput,
+  Prospect,
+  SalesContext,
+  SelectedSignal,
+} from "@/lib/types";
 
 const EM_DASH_RE = /\s*—\s*/g;
-const EN_DASH_RE = /\s*–\s*/g;
-const JARGON_RE = /\b(synergy|leverage[sd]?|scalable|ecosystem|paradigm|circle back|deep dive|bandwidth|touch base|move the needle|game.changer|cutting.edge|best.in.class|world.class|revolutionary|disruptive)\b/gi;
+const JARGON_RE =
+  /\b(synergy|leverage[sd]?|scalable|ecosystem|paradigm|circle back|deep dive|bandwidth|touch base|move the needle|game.changer|cutting.edge|best.in.class|world.class|revolutionary|disruptive)\b/gi;
 const EXCLAMATION_RE = /!/g;
 
 function sanitizeDraft(text: string): string {
   return text
     .replace(EM_DASH_RE, ", ")
-    .replace(EN_DASH_RE, ", ")
     .replace(EXCLAMATION_RE, ".")
     .replace(JARGON_RE, (match) => {
       const replacements: Record<string, string> = {
-        synergy: "alignment", leverage: "use", leveraged: "used", leverages: "uses",
-        scalable: "flexible", ecosystem: "platform", paradigm: "approach",
-        "circle back": "follow up", "deep dive": "look closely", bandwidth: "capacity",
-        "touch base": "connect", "move the needle": "make a difference",
-        "game-changer": "big shift", "game changer": "big shift",
-        "cutting-edge": "modern", "cutting edge": "modern",
-        "best-in-class": "strong", "best in class": "strong",
-        "world-class": "strong", "world class": "strong",
-        revolutionary: "new", disruptive: "new",
+        synergy: "alignment",
+        leverage: "use",
+        leveraged: "used",
+        leverages: "uses",
+        scalable: "flexible",
+        ecosystem: "platform",
+        paradigm: "approach",
+        "circle back": "follow up",
+        "deep dive": "look closely",
+        bandwidth: "capacity",
+        "touch base": "connect",
+        "move the needle": "make a difference",
+        "game-changer": "big shift",
+        "game changer": "big shift",
+        "cutting-edge": "modern",
+        "cutting edge": "modern",
+        "best-in-class": "strong",
+        "best in class": "strong",
+        "world-class": "strong",
+        "world class": "strong",
+        revolutionary: "new",
+        disruptive: "new",
       };
       return replacements[match.toLowerCase()] ?? match;
     })
@@ -39,7 +56,9 @@ function sanitizeSummary(summary: string): string {
     .slice(0, 120);
 }
 
-function buildPublicSignal(signal: SelectedSignal): Pick<SelectedSignal, "summary" | "safety" | "sources"> {
+function buildPublicSignal(
+  signal: SelectedSignal,
+): Pick<SelectedSignal, "summary" | "safety" | "sources"> {
   return {
     summary: signal.summary,
     safety: signal.safety,
@@ -61,12 +80,14 @@ function buildSensitiveFixtureDraft(
 
   return {
     emailSubject: `A thought on how ${prospect?.company ?? "your team"} approaches outreach`,
-    emailBody: sanitizeDraft([
-      `Hi ${firstName},`,
-      `Reaching out because there are some account-level changes${companyCtx} that look relevant to how your team prioritizes outreach. I won't get into the specifics here, but the short version is it looked like a moment worth flagging.`,
-      `We help ${roleContext} with ${offering}, grounding outreach in real account context so reps spend time on accounts that are actually moving. Given what I'm seeing${companyCtx}, it seemed worth a conversation.`,
-      "Would a 15-minute call this week work?",
-    ].join("\n\n")),
+    emailBody: sanitizeDraft(
+      [
+        `Hi ${firstName},`,
+        `Reaching out because there are some account-level changes${companyCtx} that look relevant to how your team prioritizes outreach. I won't get into the specifics here, but the short version is it looked like a moment worth flagging.`,
+        `We help ${roleContext} with ${offering}, grounding outreach in real account context so reps spend time on accounts that are actually moving. Given what I'm seeing${companyCtx}, it seemed worth a conversation.`,
+        "Would a 15-minute call this week work?",
+      ].join("\n\n"),
+    ),
     linkedinBody: sanitizeDraft(
       `Noticed some movement${companyCtx} that seemed relevant to how your team runs outreach. We help with ${offering}. Worth a quick call?`,
     ),
@@ -129,19 +150,20 @@ export async function buildDraft(
       `SIGNAL: ${JSON.stringify(buildPublicSignal(signal))}`,
       `SALES_CONTEXT: ${JSON.stringify(salesContext)}`,
       ...(reviewIssues?.length
-        ? ["", "REVISION REQUIRED. Fix ALL of the following issues from the previous attempt:", ...reviewIssues.map(i => `- ${i}`)]
+        ? [
+            "",
+            "REVISION REQUIRED. Fix ALL of the following issues from the previous attempt:",
+            ...reviewIssues.map((i) => `- ${i}`),
+          ]
         : []),
     ].join("\n");
     const llm = await askAnthropicJson<unknown>(prompt, { timeoutMs });
     const parsed = DraftResponseSchema.safeParse(llm);
     if (parsed.success) {
-      const cleaned = {
-        emailSubject: sanitizeDraft(parsed.data.emailSubject).slice(0, 140),
-        emailBody: sanitizeDraft(parsed.data.emailBody).slice(0, 1600),
-        linkedinBody: sanitizeDraft(parsed.data.linkedinBody).slice(0, 500),
-      };
       return {
-        ...cleaned,
+        emailSubject: parsed.data.emailSubject.trim().slice(0, 140),
+        emailBody: parsed.data.emailBody.trim().slice(0, 1600),
+        linkedinBody: parsed.data.linkedinBody.trim().slice(0, 500),
         warning:
           signal.safety === "usable_but_do_not_mention"
             ? "Sensitive signal: do not reference layoffs or crisis directly."
@@ -157,7 +179,9 @@ export async function buildDraft(
 
   const sanitized = sanitizeSummary(signal.summary);
   const firstName = prospect?.name?.split(" ")[0] ?? "there";
-  const roleCtx = prospect?.title ? `for someone in your role` : `for your team`;
+  const roleCtx = prospect?.title
+    ? `for someone in your role`
+    : `for your team`;
   const companyCtx = prospect?.company ? ` at ${prospect.company}` : "";
   const offering = salesContext.offering.toLowerCase();
 
@@ -170,9 +194,10 @@ export async function buildDraft(
 
   const linkedin = `Saw that ${sanitized.toLowerCase()}. We help with ${offering} and thought the timing might be relevant${companyCtx}. Worth a quick chat?`;
 
-  const subject = sanitized.length < 55
-    ? sanitized
-    : `Quick thought on the ${prospect?.company ?? "next"} opportunity`;
+  const subject =
+    sanitized.length < 55
+      ? sanitized
+      : `Quick thought on the ${prospect?.company ?? "next"} opportunity`;
 
   return {
     emailSubject: subject,

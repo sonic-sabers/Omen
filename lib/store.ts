@@ -31,7 +31,7 @@ export function saveRun(
   signalTypes: { signalType?: "person" | "company" | "generic" }[] = [],
 ): RunRecord {
   pruneExpired();
-  const id = `run_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  const id = `run_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
   const tier = confidenceTier(dossier);
 
   // Compile metrics

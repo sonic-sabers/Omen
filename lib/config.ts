@@ -98,14 +98,6 @@ export const RESEARCH_CONFIG = {
 // ─── Identity Resolution Config ───────────────────────────────────────────────
 
 export const RESOLVE_CONFIG = {
-  commonNames: new Set([
-    "john smith", "jane smith", "michael smith", "david smith", "robert smith",
-    "john johnson", "michael johnson", "david johnson", "robert johnson",
-    "james smith", "william smith", "mary smith", "jennifer smith",
-    "john brown", "michael brown", "david brown",
-    "john williams",
-    "chris", "alex", "jordan", "taylor", "morgan", "casey", "jamie",
-  ]),
   minNameParts: 2,
 } as const;
 
